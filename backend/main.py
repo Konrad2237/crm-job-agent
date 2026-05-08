@@ -1,15 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
-load_dotenv()
+# .env leży w głównym folderze projektu (katalog wyżej niż backend/)
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 app = FastAPI(title="CRM Job Agent API")
 
-# CORS — bez tego przeglądarka blokuje requesty z frontendu do backendu.
-# To mechanizm bezpieczeństwa: strona na vercel.app nie może domyślnie
-# gadać z serwerem na railway.app, chyba że serwer to wprost zezwoli.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -19,6 +18,10 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["*"],
 )
+
+from routers import discovery, companies  # noqa: E402 — import po app żeby uniknąć circular imports
+app.include_router(discovery.router)
+app.include_router(companies.router)
 
 
 @app.get("/")
