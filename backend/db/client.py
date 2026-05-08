@@ -20,7 +20,7 @@ async def _get_client() -> AsyncClient:
     if _supabase is None:
         _supabase = await create_async_client(
             os.environ["SUPABASE_URL"],
-            os.environ["SUPABASE_SERVICE_KEY"],
+            os.environ["SUPABASE_SERVICE_ROLE_KEY"],
         )
     return _supabase
 
@@ -33,7 +33,8 @@ async def safe_db_call(coro):
         return await coro
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
+        print(f"[DB ERROR] {type(e).__name__}: {e}")
         raise HTTPException(503, "Problem z bazą danych. Spróbuj ponownie.")
 
 
@@ -100,6 +101,14 @@ async def cleanup_stale_presented() -> None:
 async def update_company_status(company_id: str, status: str, extra: dict = {}) -> dict:
     client = await _get_client()
     payload = {"status": status, **extra}
+    result = await safe_db_call(
+        client.table("companies").update(payload).eq("id", company_id).execute()
+    )
+    return result.data[0]
+
+
+async def patch_company_fields(company_id: str, payload: dict) -> dict:
+    client = await _get_client()
     result = await safe_db_call(
         client.table("companies").update(payload).eq("id", company_id).execute()
     )
