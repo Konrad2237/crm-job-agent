@@ -12,15 +12,15 @@ from core.query_generator import generate_query
 async def main():
     print("Test 1 — pierwsze zapytanie (brak poprzednich):")
     q1 = await generate_query([])
-    print(f"  → {q1}\n")
+    print(f"  >> {q1}\n")
 
-    print("Test 2 — drugie zapytanie (zna pierwsze):")
+    print("Test 2 - drugie zapytanie (zna pierwsze):")
     q2 = await generate_query([q1])
-    print(f"  → {q2}\n")
+    print(f"  >> {q2}\n")
 
-    print("Test 3 — trzecie zapytanie (zna dwa poprzednie):")
+    print("Test 3 - trzecie zapytanie (zna dwa poprzednie):")
     q3 = await generate_query([q1, q2])
-    print(f"  → {q3}\n")
+    print(f"  >> {q3}\n")
 
     print("Wszystkie trzy zapytania różne?", len({q1, q2, q3}) == 3)
 
