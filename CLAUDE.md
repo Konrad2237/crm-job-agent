@@ -179,11 +179,11 @@ W toku:
 
 ### Umiarkowane (po MWS)
 
-- [ ] **[U1]** Fallback na snippet gdy Tavily Extract zwraca < 300 znaków (SPA strony)
-- [ ] **[U2]** `normalize_domain()` — stripować `www.` wszędzie
-- [ ] **[U3]** CORS konfiguracja w `main.py` (tylko Vercel domain + localhost:3000)
+- [x] **[U1]** Fallback na snippet gdy Tavily Extract zwraca < 300 znaków (`discovery_loop.py`)
+- [x] **[U2]** `normalize_domain()` — stripuje `www.` (`db/client.py`)
+- [ ] **[U3]** CORS — dodać Vercel domain gdy znany (po deploymencie)
 - [ ] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
-- [ ] **[U4]** Paginacja `GET /companies` — `?page=1&limit=20&status=applied`
+- [x] **[U4]** Paginacja `GET /companies` — `?page=1&limit=20&status=applied`
 - [ ] CRM Dashboard (faza 2)
 - [ ] Manual Entry Form z OLX/Pracuj.pl (faza 3)
 - [ ] LangSmith tracing (env var + weryfikacja)
@@ -196,8 +196,8 @@ W toku:
 # Backend (Railway)
 ANTHROPIC_API_KEY=
 TAVILY_API_KEY=
-SUPABASE_URL=
-SUPABASE_SERVICE_KEY=
+SUPABASE_URL=                        # tylko domena: https://xxx.supabase.co (BEZ /rest/v1/)
+SUPABASE_SERVICE_ROLE_KEY=           # z zakładki Legacy w Supabase → service_role
 API_SECRET=                          # shared secret z frontendem
 LANGSMITH_TRACING=true               # opcjonalne
 LANGSMITH_API_KEY=                   # opcjonalne
@@ -207,3 +207,9 @@ LANGSMITH_PROJECT=crm-job-agent      # opcjonalne
 NEXT_PUBLIC_API_URL=                 # URL Railway backend
 NEXT_PUBLIC_API_SECRET=              # ten sam co API_SECRET w backendzie
 ```
+
+### Uwagi do setupu (nauczone na błędach)
+
+- `SUPABASE_URL` — tylko domena bez ścieżki. SDK sam dodaje `/rest/v1/`
+- `SUPABASE_SERVICE_ROLE_KEY` — nie `SUPABASE_SERVICE_KEY`. Klucz z zakładki **Legacy** w Supabase → service_role (nie anon)
+- `.env` leży w głównym folderze projektu (`crm-job-agent/.env`), nie w `backend/`
