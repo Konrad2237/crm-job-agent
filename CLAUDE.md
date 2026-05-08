@@ -133,7 +133,7 @@ crm-job-agent/
 
 ## Aktualny status projektu
 
-**Faza: Pre-development — architektura gotowa, kodowanie nierozpoczęte**
+**Faza: MWS w toku — Dzień 1 ukończony, Dzień 2 w toku**
 *(aktualizuj przy każdej sesji)*
 
 Ukończone:
@@ -141,14 +141,18 @@ Ukończone:
 - [x] Dekompozycja systemu na komponenty
 - [x] Architektura techniczna
 - [x] Schemat bazy danych
-- [x] ADR-001 (monolit), ADR-002 (Haiku do obu zadań), ADR-003 (pre-filter + retry)
 - [x] MWS plan (3 dni)
 - [x] Stress test architektury
 - [x] Testy scenariuszowe (5 przypadków)
 - [x] Identyfikacja luk i poprawek
+- [x] Dzień 1: Supabase setup + backend foundation
+  - [x] Tabela `companies` w Supabase z UNIQUE(domain) i triggerem updated_at
+  - [x] `requirements.txt`, `main.py`, `models/schemas.py`
+  - [x] `db/client.py` — normalize_domain, safe_db_call, is_domain_seen, save_company, get_recent_presented, cleanup_stale_presented, get_companies
+  - [x] `core/query_generator.py` — Haiku generuje polskie zapytania Tavily
+  - [x] Test manualny query_generator — 1s latencja, 300-400 tokenów, widoczny w LangSmith
 
 W toku:
-- [ ] Dzień 1: Supabase setup + backend foundation
 - [ ] Dzień 2: Discovery loop + endpointy
 - [ ] Dzień 3: Frontend + deployment
 
@@ -158,20 +162,20 @@ W toku:
 
 ### Krytyczne (przed pierwszą linią kodu)
 
-- [ ] **[K1]** Dodać `UNIQUE (domain)` do tabeli `companies` w Supabase
-- [ ] **[K1]** Używać `ON CONFLICT (domain) DO NOTHING` przy każdym INSERT
-- [ ] **[K1]** Disable przycisku w `CompanyCard.tsx` podczas requesta
-- [ ] **[K2]** Truncacja treści do 6,000 znaków w `page_verifier.py`
-- [ ] Plik `.env` w `.gitignore` — sprawdzić przed pierwszym commitem
+- [x] **[K1]** Dodać `UNIQUE (domain)` do tabeli `companies` w Supabase
+- [x] **[K1]** Używać `ON CONFLICT (domain) DO NOTHING` przy każdym INSERT (`db/client.py`)
+- [ ] **[K1]** Disable przycisku w `CompanyCard.tsx` podczas requesta — Dzień 3
+- [ ] **[K2]** Truncacja treści do 6,000 znaków w `page_verifier.py` — Dzień 2
+- [x] Plik `.env` w `.gitignore`
 
 ### Poważne (w trakcie MWS)
 
-- [ ] **[P1]** `asyncio.timeout(25)` w `discovery_loop.py`
-- [ ] **[P2]** `safe_db_call()` wrapper w `db/client.py` — wszystkie wywołania Supabase
-- [ ] **[P3]** `call_with_retry()` dla Tavily i Anthropic (nie tylko Anthropic)
-- [ ] **[P4]** Sprawdzenie pending `presented` na starcie każdego `/find`
-- [ ] **[P4]** Cleanup `presented` > 24h → `skipped`
-- [ ] **[P5]** Auto-trigger kolejnego `/find` po zapisaniu aplikacji
+- [ ] **[P1]** `asyncio.timeout(25)` w `discovery_loop.py` — Dzień 2
+- [x] **[P2]** `safe_db_call()` wrapper w `db/client.py`
+- [ ] **[P3]** `call_with_retry()` dla Tavily i Anthropic — Dzień 2
+- [x] **[P4]** Sprawdzenie pending `presented` na starcie każdego `/find` (`get_recent_presented`)
+- [x] **[P4]** Cleanup `presented` > 24h → `skipped` (`cleanup_stale_presented`)
+- [ ] **[P5]** Auto-trigger kolejnego `/find` po zapisaniu aplikacji — Dzień 3
 
 ### Umiarkowane (po MWS)
 
