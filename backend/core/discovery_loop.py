@@ -100,7 +100,7 @@ async def find_company() -> dict | None:
                     # Krok 5: Haiku klasyfikuje — polska firma AI?
                     verification = await call_with_retry(lambda c=content: verify_page(c))
 
-                    if not verification.is_polish or not verification.is_ai_company:
+                    if not verification.is_polish or not verification.is_ai_company or not verification.is_company_page:
                         continue
 
                     # Krok 6: zapisz do bazy i zwróć

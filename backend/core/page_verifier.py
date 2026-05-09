@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class PageVerification(BaseModel):
     is_polish: bool
     is_ai_company: bool
+    is_company_page: bool  # False dla list rankingów, artykułów, katalogów firm
     what_they_do: str  # krótki opis jak "chatboty, agenci AI" — pusty string jeśli firma nie pasuje
 
 
@@ -26,8 +27,12 @@ Kryterium 2 — is_ai_company: czy firma zajmuje się AI/sztuczną inteligencją
 - TAK: chatboty, wirtualni asystenci, agenci AI, automatyzacje oparte na LLM, RAG, generatywne AI, wdrożenia modeli językowych
 - NIE: zwykłe oprogramowanie bez AI, consulting IT bez AI, e-commerce, marketing
 
-what_they_do: tylko gdy OBA kryteria TAK — jednozdaniowy opis np. "chatboty dla e-commerce, integracje GPT-4".
-Gdy któreś kryterium NIE — zwróć pusty string.
+Kryterium 3 — is_company_page: czy to strona jednej konkretnej firmy?
+- TAK: strona główna lub podstrona firmy opisująca jej ofertę/usługi
+- NIE: artykuł z listą firm ("top 10 chatbotów"), katalog firm, ranking, blog, news, portal porównawczy
+
+what_they_do: tylko gdy WSZYSTKIE trzy kryteria TAK — jednozdaniowy opis np. "chatboty dla e-commerce, integracje GPT-4".
+Gdy którekolwiek kryterium NIE — zwróć pusty string.
 
 Klasyfikuj wyłącznie na podstawie treści którą dostajesz. Nie zgaduj."""
 
