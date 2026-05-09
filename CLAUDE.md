@@ -133,7 +133,7 @@ crm-job-agent/
 
 ## Aktualny status projektu
 
-**Faza: MWS w toku — Dzień 3 w toku (frontend zbudowany)**
+**Faza: MWS ukończony — aplikacja na produkcji**
 *(aktualizuj przy każdej sesji)*
 
 Ukończone:
@@ -152,17 +152,23 @@ Ukończone:
   - [x] `routers/discovery.py` — POST /find, /skip, /apply
   - [x] `routers/companies.py` — GET /companies, PATCH /companies/{id}
   - [x] Test end-to-end: POST /find zwraca prawdziwą firmę, dedup działa
-- [x] Dzień 3: Frontend (Next.js 16 + Tailwind 4)
+- [x] Dzień 3: Frontend + deployment
   - [x] `lib/api.ts` — klient HTTP dla wszystkich endpointów
   - [x] `app/page.tsx` — Discovery view z przyciskiem disable + auto-find po apply
   - [x] `app/crm/page.tsx` — CRM Dashboard z filtrem statusu
   - [x] `components/CompanyCard.tsx` — karta firmy + przyciski Pomiń/Wysłałem CV
   - [x] `components/ApplicationForm.tsx` — formularz zapisywania aplikacji
   - [x] `components/CRMTable.tsx` — tabela z paginacją
-  - [x] Build + TypeScript check: OK
+  - [x] `Procfile` — start command dla Railway railpack
+  - [x] Backend na Railway: `https://crm-job-agent-production.up.railway.app`
+  - [x] Frontend na Vercel: `https://crm-job-agent.vercel.app`
+  - [x] Fix: `is_company_page` w page_verifier — odrzuca listy rankingowe
 
-W toku:
-- [ ] Dzień 3: Deployment (Railway + Vercel)
+Po MWS — do zrobienia:
+- [ ] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
+- [ ] Optymalizacja tokenów: skrócić limit treści 6000 → 2000-3000 znaków
+- [ ] Heurystyczny pre-filter (.pl / polskie znaki) przed wywołaniem Haiku
+- [ ] Manual Entry Form z OLX/Pracuj.pl (faza 3)
 
 ---
 
@@ -189,12 +195,12 @@ W toku:
 
 - [x] **[U1]** Fallback na snippet gdy Tavily Extract zwraca < 300 znaków (`discovery_loop.py`)
 - [x] **[U2]** `normalize_domain()` — stripuje `www.` (`db/client.py`)
-- [ ] **[U3]** CORS — dodać Vercel domain gdy znany (po deploymencie)
+- [x] **[U3]** CORS — `FRONTEND_URL` ustawiony w Railway
 - [ ] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
 - [x] **[U4]** Paginacja `GET /companies` — `?page=1&limit=20&status=applied`
 - [x] CRM Dashboard — `app/crm/page.tsx` + `components/CRMTable.tsx`
 - [ ] Manual Entry Form z OLX/Pracuj.pl (faza 3)
-- [ ] LangSmith tracing (env var + weryfikacja)
+- [x] LangSmith tracing — env vars ustawione w Railway
 
 ---
 
