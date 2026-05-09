@@ -134,6 +134,13 @@ async def patch_company_fields(company_id: str, payload: dict) -> dict:
     return result.data[0]
 
 
+async def delete_company(company_id: str) -> None:
+    client = await _get_client()
+    await safe_db_call(
+        client.table("companies").delete().eq("id", company_id).execute()
+    )
+
+
 async def get_companies(status: str | None, limit: int, offset: int) -> list[dict]:
     client = await _get_client()
     query = client.table("companies").select("*").order("created_at", desc=True)

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 
-from db.client import get_companies, patch_company_fields, is_domain_seen, save_manual_company, normalize_domain
+from db.client import get_companies, patch_company_fields, delete_company, is_domain_seen, save_manual_company, normalize_domain
 from models.schemas import PatchCompanyRequest, ManualCompanyRequest
 
 router = APIRouter()
@@ -29,3 +29,8 @@ async def patch_company(company_id: str, data: PatchCompanyRequest):
     if not payload:
         raise HTTPException(400, "Brak pól do aktualizacji.")
     return await patch_company_fields(company_id, payload)
+
+
+@router.delete("/companies/{company_id}", status_code=204)
+async def remove_company(company_id: str):
+    await delete_company(company_id)

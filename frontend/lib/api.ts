@@ -28,6 +28,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     const body = await res.json().catch(() => ({}));
     throw new Error(body?.detail?.message ?? body?.detail ?? `HTTP ${res.status}`);
   }
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
@@ -53,6 +54,9 @@ export const api = {
     if (params.status) q.set("status", params.status);
     return apiFetch<Company[]>(`/companies?${q}`);
   },
+
+  deleteCompany: (id: string) =>
+    apiFetch<void>(`/companies/${id}`, { method: "DELETE" }),
 
   patchCompany: (
     id: string,

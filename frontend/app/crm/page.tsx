@@ -4,6 +4,7 @@ import { api, Company } from "@/lib/api";
 import CRMTable from "@/components/CRMTable";
 import ManualEntryModal from "@/components/ManualEntryModal";
 import ReplyModal from "@/components/ReplyModal";
+import CompanyEditModal from "@/components/CompanyEditModal";
 
 const LIMIT = 20;
 
@@ -24,6 +25,8 @@ export default function CRMPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [replyCompany, setReplyCompany] = useState<Company | null>(null);
   const [replyLoading, setReplyLoading] = useState(false);
+  const [editCompany, setEditCompany] = useState<Company | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   const fetchPage = useCallback(
     async (p: number, s: string) => {
@@ -97,6 +100,33 @@ export default function CRMPage() {
     }
   }
 
+  async function handleEditSubmit(data: Record<string, string | undefined>) {
+    if (!editCompany) return;
+    setEditLoading(true);
+    try {
+      await api.patchCompany(editCompany.id, data);
+      setEditCompany(null);
+      fetchPage(page, status);
+    } catch (e) {
+      throw e;
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  async function handleEditDelete() {
+    if (!editCompany) return;
+    setEditLoading(true);
+    try {
+      await api.deleteCompany(editCompany.id);
+      setEditCompany(null);
+      fetchPage(page, status);
+    } catch (e) {
+      setEditLoading(false);
+      throw e;
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -141,6 +171,16 @@ export default function CRMPage() {
         />
       )}
 
+      {editCompany && (
+        <CompanyEditModal
+          company={editCompany}
+          onSubmit={handleEditSubmit}
+          onDelete={handleEditDelete}
+          onClose={() => setEditCompany(null)}
+          loading={editLoading}
+        />
+      )}
+
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -157,6 +197,7 @@ export default function CRMPage() {
           onPrev={() => setPage((p) => Math.max(1, p - 1))}
           onNext={() => setPage((p) => p + 1)}
           onReply={setReplyCompany}
+          onEdit={setEditCompany}
         />
       )}
     </div>
