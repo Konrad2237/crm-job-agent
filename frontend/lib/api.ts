@@ -53,4 +53,18 @@ export const api = {
     if (params.status) q.set("status", params.status);
     return apiFetch<Company[]>(`/companies?${q}`);
   },
+
+  addManualCompany: (data: {
+    name: string;
+    url: string;
+    what_they_do?: string;
+    position?: string;
+    salary_expectation?: string;
+    contact_email?: string;
+    notes?: string;
+  }) =>
+    apiFetch<Company>("/companies/manual", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };

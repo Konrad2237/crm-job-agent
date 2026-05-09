@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, Company } from "@/lib/api";
 import CRMTable from "@/components/CRMTable";
+import ManualEntryModal from "@/components/ManualEntryModal";
 
 const LIMIT = 20;
 
@@ -18,6 +19,8 @@ export default function CRMPage() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
 
   const fetchPage = useCallback(
     async (p: number, s: string) => {
@@ -44,23 +47,70 @@ export default function CRMPage() {
     setPage(1);
   }
 
+  async function handleManualSubmit(data: {
+    name: string;
+    url: string;
+    what_they_do: string;
+    position: string;
+    salary_expectation: string;
+    contact_email: string;
+    notes: string;
+  }) {
+    setModalLoading(true);
+    try {
+      await api.addManualCompany({
+        name: data.name,
+        url: data.url,
+        what_they_do: data.what_they_do || undefined,
+        position: data.position || undefined,
+        salary_expectation: data.salary_expectation || undefined,
+        contact_email: data.contact_email || undefined,
+        notes: data.notes || undefined,
+      });
+      setShowModal(false);
+      setPage(1);
+      fetchPage(1, status);
+    } catch (e) {
+      throw e;
+    } finally {
+      setModalLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-bold">CRM Dashboard</h1>
 
-        <select
-          value={status}
-          onChange={handleStatusChange}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-3">
+          <select
+            value={status}
+            onChange={handleStatusChange}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+          >
+            + Dodaj ręcznie
+          </button>
+        </div>
       </div>
+
+      {showModal && (
+        <ManualEntryModal
+          onSubmit={handleManualSubmit}
+          onClose={() => setShowModal(false)}
+          loading={modalLoading}
+        />
+      )}
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

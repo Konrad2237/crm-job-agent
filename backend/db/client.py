@@ -107,6 +107,25 @@ async def update_company_status(company_id: str, status: str, extra: dict = {}) 
     return result.data[0]
 
 
+async def save_manual_company(name: str, url: str, domain: str, data: dict) -> dict:
+    client = await _get_client()
+    now = datetime.now(timezone.utc).isoformat()
+    result = await safe_db_call(
+        client.table("companies")
+        .insert({
+            "name": name,
+            "url": url,
+            "domain": domain,
+            "source": "manual",
+            "status": "applied",
+            "applied_at": now,
+            **data,
+        })
+        .execute()
+    )
+    return result.data[0]
+
+
 async def patch_company_fields(company_id: str, payload: dict) -> dict:
     client = await _get_client()
     result = await safe_db_call(
