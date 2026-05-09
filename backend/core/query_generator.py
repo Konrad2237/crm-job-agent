@@ -28,6 +28,8 @@ Zasady:
 - Firmy muszą być POLSKIE (siedziba w Polsce, strona po polsku, domena .pl)
 - Zapytanie może być po polsku lub angielsku — wybierz co da lepsze wyniki dla danej branży
 - Każde zapytanie INNE niż poprzednie — zmieniaj kombinację branży, typu firmy i oferowanej usługi
+- Zapytanie ma znajdować STRONY FIRMOWE z ofertą usług — NIE artykuły, poradniki, rankingi ani blogi
+- Używaj słów które trafiają na strony firmowe: "usługi", "oferta", "rozwiązania", "wdrożenia", "dla firm"
 - Zwróć TYLKO treść zapytania, żadnych wyjaśnień ani cudzysłowów"""
 
 

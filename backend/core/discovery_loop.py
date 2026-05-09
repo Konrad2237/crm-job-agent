@@ -65,7 +65,7 @@ async def _extract_content(tavily: AsyncTavilyClient, url: str, snippet: str) ->
 async def find_company() -> dict | None:
     global _query_history
     try:
-        async with asyncio.timeout(25):  # twardy limit — Railway zerwie połączenie po 30s
+        async with asyncio.timeout(45):  # twardy limit — Railway domyślnie nie ma krótkiego timeoutu
             # Krok 0: czy jest firma z niepodjętą decyzją z ostatnich 24h?
             # Scenariusz: użytkownik zamknął przeglądarkę przed kliknięciem Pomiń/Aplikuj.
             pending = await get_recent_presented()
