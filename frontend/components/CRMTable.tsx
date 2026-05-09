@@ -10,7 +10,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, string> = {
   presented: "bg-blue-50 text-blue-700 border-blue-200",
-  skipped: "bg-gray-100 text-gray-600 border-gray-200",
+  skipped: "bg-gray-100 text-gray-700 border-gray-300",
   applied: "bg-green-50 text-green-700 border-green-200",
 };
 
@@ -46,10 +46,12 @@ function SortHeader({ field, label, sort, order, onSort }: {
   return (
     <button
       onClick={() => onSort?.(field)}
-      className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+      className="flex items-center gap-1 hover:text-gray-900 font-medium transition-colors"
     >
       {label}
-      <span className="text-xs text-gray-400">{active ? (order === "asc" ? "↑" : "↓") : "↕"}</span>
+      <span className={`text-xs ${active ? "text-blue-600" : "text-gray-400"}`}>
+        {active ? (order === "asc" ? "↑" : "↓") : "↕"}
+      </span>
     </button>
   );
 }
@@ -58,34 +60,41 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   function copyEmail(id: string, email: string) {
-    navigator.clipboard.writeText(email);
+    navigator.clipboard.writeText(email).catch(() => {
+      const el = document.createElement("textarea");
+      el.value = email;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    });
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 1500);
   }
 
   if (companies.length === 0) {
-    return <p className="text-gray-500 text-sm">Brak firm do wyświetlenia.</p>;
+    return <p className="text-gray-600 text-sm py-8 text-center">Brak firm do wyświetlenia.</p>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 text-left">
-              <th className="px-4 py-3 font-medium text-gray-600">
+            <tr className="border-b border-gray-200 bg-gray-50 text-left text-gray-700">
+              <th className="px-4 py-3">
                 <SortHeader field="name" label="Firma" sort={sort} order={order} onSort={onSort} />
               </th>
-              <th className="px-4 py-3 font-medium text-gray-600">Czym się zajmuje</th>
-              <th className="px-4 py-3 font-medium text-gray-600">
+              <th className="px-4 py-3 font-medium">Czym się zajmuje</th>
+              <th className="px-4 py-3">
                 <SortHeader field="status" label="Status" sort={sort} order={order} onSort={onSort} />
               </th>
-              <th className="px-4 py-3 font-medium text-gray-600">Odpowiedź</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Stanowisko</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Wynagrodzenie</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Email</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Notatki</th>
-              <th className="px-4 py-3 font-medium text-gray-600">
+              <th className="px-4 py-3 font-medium">Odpowiedź</th>
+              <th className="px-4 py-3 font-medium">Stanowisko</th>
+              <th className="px-4 py-3 font-medium">Wynagrodzenie</th>
+              <th className="px-4 py-3 font-medium">Email</th>
+              <th className="px-4 py-3 font-medium">Notatki</th>
+              <th className="px-4 py-3">
                 <SortHeader field="created_at" label="Data" sort={sort} order={order} onSort={onSort} />
               </th>
               <th className="px-4 py-3"></th>
@@ -93,10 +102,10 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
           </thead>
           <tbody className="divide-y divide-gray-100">
             {companies.map((c) => (
-              <tr key={c.id} className="hover:bg-gray-50">
+              <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
-                  <div className="font-medium">{c.name}</div>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="font-semibold text-gray-900">{c.name}</div>
+                  <div className="flex items-center gap-2 mt-1">
                     <a
                       href={c.url}
                       target="_blank"
@@ -105,21 +114,21 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
                     >
                       {c.domain}
                     </a>
-                    <span className={`text-xs px-1.5 py-0.5 rounded border ${
+                    <span className={`text-xs px-1.5 py-0.5 rounded border font-medium ${
                       c.source === "manual"
-                        ? "bg-purple-50 text-purple-600 border-purple-200"
-                        : "bg-gray-50 text-gray-400 border-gray-200"
+                        ? "bg-purple-50 text-purple-700 border-purple-200"
+                        : "bg-gray-100 text-gray-600 border-gray-200"
                     }`}>
                       {c.source === "manual" ? "ręcznie" : "agent"}
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
-                  {c.what_they_do ?? "—"}
+                <td className="px-4 py-3 text-gray-700 max-w-xs truncate">
+                  {c.what_they_do ?? <span className="text-gray-400">—</span>}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-1 rounded-full border ${
-                    STATUS_STYLES[c.status] ?? "bg-gray-100 text-gray-600 border-gray-200"
+                  <span className={`text-xs px-2 py-1 rounded-full border font-medium ${
+                    STATUS_STYLES[c.status] ?? "bg-gray-100 text-gray-700 border-gray-300"
                   }`}>
                     {STATUS_LABELS[c.status] ?? c.status}
                   </span>
@@ -129,23 +138,23 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
                     <div className="flex flex-col gap-1">
                       {c.reply_status ? (
                         <>
-                          <span className={`text-xs px-2 py-1 rounded-full border w-fit ${
-                            REPLY_STYLES[c.reply_status] ?? "bg-gray-100 text-gray-600 border-gray-200"
+                          <span className={`text-xs px-2 py-1 rounded-full border w-fit font-medium ${
+                            REPLY_STYLES[c.reply_status] ?? "bg-gray-100 text-gray-700 border-gray-300"
                           }`}>
                             {REPLY_LABELS[c.reply_status] ?? c.reply_status}
                           </span>
                           {c.reply_received && (
-                            <span className="text-xs text-gray-400">{c.reply_received}</span>
+                            <span className="text-xs text-gray-600">{c.reply_received}</span>
                           )}
                           {onReply && (
-                            <button onClick={() => onReply(c)} className="text-xs text-blue-500 hover:underline text-left w-fit">
+                            <button onClick={() => onReply(c)} className="text-xs text-blue-600 hover:underline text-left w-fit">
                               Edytuj
                             </button>
                           )}
                         </>
                       ) : (
                         onReply && (
-                          <button onClick={() => onReply(c)} className="text-xs text-gray-400 hover:text-blue-600 hover:underline text-left">
+                          <button onClick={() => onReply(c)} className="text-xs text-gray-500 hover:text-blue-600 hover:underline text-left">
                             + Ustaw odpowiedź
                           </button>
                         )
@@ -155,31 +164,37 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
                     <span className="text-gray-400">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{c.position ?? "—"}</td>
-                <td className="px-4 py-3 text-gray-600">{c.salary_expectation ?? "—"}</td>
-                <td className="px-4 py-3 text-gray-600">
+                <td className="px-4 py-3 text-gray-700">{c.position ?? <span className="text-gray-400">—</span>}</td>
+                <td className="px-4 py-3 text-gray-700">{c.salary_expectation ?? <span className="text-gray-400">—</span>}</td>
+                <td className="px-4 py-3 text-gray-700">
                   {c.contact_email ? (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <span>{c.contact_email}</span>
                       <button
                         onClick={() => copyEmail(c.id, c.contact_email!)}
-                        className="text-gray-300 hover:text-gray-600 transition-colors"
-                        title="Kopiuj email"
+                        className={`text-xs px-2 py-0.5 rounded border transition-colors whitespace-nowrap ${
+                          copiedId === c.id
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200"
+                        }`}
                       >
-                        {copiedId === c.id ? "✓" : "⎘"}
+                        {copiedId === c.id ? "✓ Skopiowano" : "Kopiuj"}
                       </button>
                     </div>
-                  ) : "—"}
+                  ) : <span className="text-gray-400">—</span>}
                 </td>
-                <td className="px-4 py-3 text-gray-500 max-w-xs truncate" title={c.notes ?? ""}>
-                  {c.notes ?? "—"}
+                <td className="px-4 py-3 text-gray-700 max-w-xs truncate" title={c.notes ?? ""}>
+                  {c.notes ?? <span className="text-gray-400">—</span>}
                 </td>
-                <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                   {new Date(c.applied_at ?? c.created_at).toLocaleDateString("pl-PL")}
                 </td>
                 <td className="px-4 py-3">
                   {onEdit && (
-                    <button onClick={() => onEdit(c)} className="text-xs text-gray-400 hover:text-blue-600 hover:underline whitespace-nowrap">
+                    <button
+                      onClick={() => onEdit(c)}
+                      className="text-xs px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 whitespace-nowrap transition-colors"
+                    >
                       Edytuj
                     </button>
                   )}
@@ -190,21 +205,21 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
         </table>
       </div>
 
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center justify-between text-sm text-gray-700">
         <button
           onClick={onPrev}
           disabled={page === 1}
-          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium"
         >
-          Poprzednia
+          ← Poprzednia
         </button>
         <span className="text-gray-500">Strona {page}</span>
         <button
           onClick={onNext}
           disabled={!hasMore}
-          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium"
         >
-          Następna
+          Następna →
         </button>
       </div>
     </div>
