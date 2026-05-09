@@ -117,7 +117,11 @@ async def find_company() -> dict | None:
                         continue  # naprawdę nic nie ma — skip
 
                     # Krok 5: Haiku klasyfikuje — polska firma AI?
-                    verification = await call_with_retry(lambda c=content: verify_page(c))
+                    # retries=1 zamiast 2 — przy błędzie parsowania Haiku ponowienie rzadko pomaga
+                    try:
+                        verification = await call_with_retry(lambda c=content: verify_page(c), retries=1)
+                    except Exception:
+                        continue  # błąd parsowania — skip URL, nie przepalaj kolejnych tokenów
 
                     if not verification.is_polish or not verification.is_ai_company or not verification.is_company_page:
                         continue
