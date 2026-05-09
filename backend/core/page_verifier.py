@@ -23,9 +23,9 @@ Kryterium 1 — is_polish: czy to polska firma?
 - Strona głównie po polsku LUB siedziba w Polsce LUB domena .pl
 - Oddziały zagranicznych korporacji w Polsce = NIE (szukamy polskich firm)
 
-Kryterium 2 — is_ai_company: czy firma zajmuje się AI/sztuczną inteligencją?
-- TAK: chatboty, wirtualni asystenci, agenci AI, automatyzacje oparte na LLM, RAG, generatywne AI, wdrożenia modeli językowych
-- NIE: zwykłe oprogramowanie bez AI, consulting IT bez AI, e-commerce, marketing
+Kryterium 2 — is_ai_company: czy firma oferuje usługi lub produkty z obszaru AI?
+- TAK: chatboty, wirtualni asystenci, agenci AI, automatyzacje LLM, RAG, generatywne AI, wdrożenia modeli językowych, firmy IT/tech które mają AI jako jeden z oferowanych obszarów usług lub produktów
+- NIE: firma tylko wspomina AI jako buzzword bez konkretnej oferty ani produktu, zwykłe oprogramowanie bez AI, consulting IT bez AI, e-commerce, marketing bez AI
 
 Kryterium 3 — is_company_page: czy to strona jednej konkretnej firmy?
 - TAK: strona główna lub podstrona firmy opisująca jej ofertę/usługi
