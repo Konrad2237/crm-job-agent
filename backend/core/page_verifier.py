@@ -7,7 +7,7 @@ class PageVerification(BaseModel):
     is_polish: bool
     is_ai_company: bool
     is_company_page: bool  # False dla list rankingów, artykułów, katalogów firm
-    what_they_do: str  # krótki opis jak "chatboty, agenci AI" — pusty string jeśli firma nie pasuje
+    what_they_do: str = ""  # pusty gdy którekolwiek kryterium False — Haiku czasem pomija pole
 
 
 # temperature=0.0 — klasyfikacja wymaga determinizmu, nie kreatywności
