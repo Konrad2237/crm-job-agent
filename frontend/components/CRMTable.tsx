@@ -63,14 +63,23 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3">
                   <div className="font-medium">{c.name}</div>
-                  <a
-                    href={c.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    {c.domain}
-                  </a>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <a
+                      href={c.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      {c.domain}
+                    </a>
+                    <span className={`text-xs px-1.5 py-0.5 rounded border ${
+                      c.source === "manual"
+                        ? "bg-purple-50 text-purple-600 border-purple-200"
+                        : "bg-gray-50 text-gray-400 border-gray-200"
+                    }`}>
+                      {c.source === "manual" ? "ręcznie" : "agent"}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
                   {c.what_they_do ?? "—"}
