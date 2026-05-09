@@ -25,7 +25,7 @@ async def add_manual(data: ManualCompanyRequest):
 
 @router.patch("/companies/{company_id}")
 async def patch_company(company_id: str, data: PatchCompanyRequest):
-    payload = data.model_dump(exclude_none=True)
+    payload = data.model_dump(exclude_unset=True)
     if not payload:
         raise HTTPException(400, "Brak pól do aktualizacji.")
     return await patch_company_fields(company_id, payload)

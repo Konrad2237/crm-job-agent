@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api, Company } from "@/lib/api";
 import CRMTable from "@/components/CRMTable";
 import ManualEntryModal from "@/components/ManualEntryModal";
+import ReplyModal from "@/components/ReplyModal";
 
 const LIMIT = 20;
 
@@ -21,6 +22,8 @@ export default function CRMPage() {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const [replyCompany, setReplyCompany] = useState<Company | null>(null);
+  const [replyLoading, setReplyLoading] = useState(false);
 
   const fetchPage = useCallback(
     async (p: number, s: string) => {
@@ -77,6 +80,23 @@ export default function CRMPage() {
     }
   }
 
+  async function handleReplySubmit(data: { reply_status: string; reply_received: string }) {
+    if (!replyCompany) return;
+    setReplyLoading(true);
+    try {
+      await api.patchCompany(replyCompany.id, {
+        reply_status: data.reply_status || null,
+        reply_received: data.reply_received || null,
+      });
+      setReplyCompany(null);
+      fetchPage(page, status);
+    } catch (e) {
+      throw e;
+    } finally {
+      setReplyLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -112,6 +132,15 @@ export default function CRMPage() {
         />
       )}
 
+      {replyCompany && (
+        <ReplyModal
+          company={replyCompany}
+          onSubmit={handleReplySubmit}
+          onClose={() => setReplyCompany(null)}
+          loading={replyLoading}
+        />
+      )}
+
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -127,6 +156,7 @@ export default function CRMPage() {
           hasMore={companies.length === LIMIT}
           onPrev={() => setPage((p) => Math.max(1, p - 1))}
           onNext={() => setPage((p) => p + 1)}
+          onReply={setReplyCompany}
         />
       )}
     </div>
