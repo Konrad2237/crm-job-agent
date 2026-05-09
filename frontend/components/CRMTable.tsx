@@ -32,9 +32,10 @@ type Props = {
   onPrev: () => void;
   onNext: () => void;
   onReply?: (company: Company) => void;
+  onEdit?: (company: Company) => void;
 };
 
-export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onReply }: Props) {
+export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onReply, onEdit }: Props) {
   if (companies.length === 0) {
     return <p className="text-gray-500 text-sm">Brak firm do wyświetlenia.</p>;
   }
@@ -51,6 +52,7 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
               <th className="px-4 py-3 font-medium text-gray-600">Odpowiedź</th>
               <th className="px-4 py-3 font-medium text-gray-600">Stanowisko</th>
               <th className="px-4 py-3 font-medium text-gray-600">Data</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -121,6 +123,16 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
                 <td className="px-4 py-3 text-gray-600">{c.position ?? "—"}</td>
                 <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                   {new Date(c.applied_at ?? c.created_at).toLocaleDateString("pl-PL")}
+                </td>
+                <td className="px-4 py-3">
+                  {onEdit && (
+                    <button
+                      onClick={() => onEdit(c)}
+                      className="text-xs text-gray-400 hover:text-blue-600 hover:underline whitespace-nowrap"
+                    >
+                      Edytuj
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
