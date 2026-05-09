@@ -141,10 +141,41 @@ async def delete_company(company_id: str) -> None:
     )
 
 
-async def get_companies(status: str | None, limit: int, offset: int) -> list[dict]:
+_VALID_SORT_FIELDS = {"name", "created_at", "applied_at", "status"}
+
+
+async def get_companies(
+    status: str | None,
+    limit: int,
+    offset: int,
+    search: str | None = None,
+    sort: str = "created_at",
+    order: str = "desc",
+) -> list[dict]:
     client = await _get_client()
-    query = client.table("companies").select("*").order("created_at", desc=True)
+    sort_field = sort if sort in _VALID_SORT_FIELDS else "created_at"
+    query = client.table("companies").select("*").order(sort_field, desc=(order == "desc"))
     if status:
         query = query.eq("status", status)
+    if search:
+        safe = search.replace("%", "").replace("_", "")[:100]
+        query = query.or_(f"name.ilike.%{safe}%,domain.ilike.%{safe}%")
     result = await safe_db_call(query.range(offset, offset + limit - 1).execute())
     return result.data
+
+
+async def get_stats() -> dict:
+    client = await _get_client()
+
+    async def _count(q) -> int:
+        r = await safe_db_call(q.limit(0).execute())
+        return r.count or 0
+
+    base = lambda: client.table("companies").select("id", count="exact")
+    applied = await _count(base().eq("status", "applied"))
+    skipped = await _count(base().eq("status", "skipped"))
+    presented = await _count(base().eq("status", "presented"))
+    replied = await _count(
+        base().eq("status", "applied").in_("reply_status", ["rejected", "interview", "offer"])
+    )
+    return {"applied": applied, "skipped": skipped, "presented": presented, "replied": replied}

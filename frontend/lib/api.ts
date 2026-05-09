@@ -51,13 +51,19 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  getCompanies: (params: { page?: number; limit?: number; status?: string }) => {
+  getCompanies: (params: { page?: number; limit?: number; status?: string; search?: string; sort?: string; order?: string }) => {
     const q = new URLSearchParams();
     if (params.page) q.set("page", String(params.page));
     if (params.limit) q.set("limit", String(params.limit));
     if (params.status) q.set("status", params.status);
+    if (params.search) q.set("search", params.search);
+    if (params.sort) q.set("sort", params.sort);
+    if (params.order) q.set("order", params.order);
     return apiFetch<Company[]>(`/companies?${q}`);
   },
+
+  getStats: () =>
+    apiFetch<{ applied: number; skipped: number; presented: number; replied: number }>("/companies/stats"),
 
   deleteCompany: (id: string) =>
     apiFetch<void>(`/companies/${id}`, { method: "DELETE" }),
