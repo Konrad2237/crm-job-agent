@@ -9,12 +9,13 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 app = FastAPI(title="CRM Job Agent API")
 
+_origins = ["http://localhost:3000", "http://localhost:3001"]
+if os.getenv("FRONTEND_URL"):
+    _origins.append(os.getenv("FRONTEND_URL"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        os.getenv("FRONTEND_URL", "http://localhost:3000"),
-        "http://localhost:3000",
-    ],
+    allow_origins=_origins,
     allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["*"],
 )
