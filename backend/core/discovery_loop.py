@@ -11,6 +11,14 @@ MAX_ATTEMPTS = 3          # ile razy generujemy nowe zapytanie Tavily
 MAX_RESULTS = 5           # ile URLi Tavily zwraca na jedno zapytanie
 MAX_CONTENT_CHARS = 6_000 # twardy limit treści przed wysłaniem do Haiku
 
+_POLISH_CHARS = set("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ")
+
+
+def _is_likely_polish(domain: str, text: str) -> bool:
+    if domain.endswith(".pl"):
+        return True
+    return any(c in _POLISH_CHARS for c in text)
+
 _tavily: AsyncTavilyClient | None = None
 
 
@@ -90,8 +98,13 @@ async def find_company() -> dict | None:
                     if await is_domain_seen(domain):
                         continue
 
-                    # Krok 4: pobierz treść strony (z fallbackiem na snippet)
+                    # Krok 3.5: heurystyczny pre-filter — zero tokenów
+                    # Odrzuca angielskie strony zanim zapłacimy za Extract i Haiku
                     snippet = result.get("content", "")
+                    if not _is_likely_polish(domain, snippet):
+                        continue
+
+                    # Krok 4: pobierz treść strony (z fallbackiem na snippet)
                     content = await _extract_content(tavily, url, snippet)
 
                     if len(content) < 50:
