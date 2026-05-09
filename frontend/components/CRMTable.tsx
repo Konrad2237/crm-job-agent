@@ -51,6 +51,8 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
               <th className="px-4 py-3 font-medium text-gray-600">Status</th>
               <th className="px-4 py-3 font-medium text-gray-600">Odpowiedź</th>
               <th className="px-4 py-3 font-medium text-gray-600">Stanowisko</th>
+              <th className="px-4 py-3 font-medium text-gray-600">Wynagrodzenie</th>
+              <th className="px-4 py-3 font-medium text-gray-600">Email</th>
               <th className="px-4 py-3 font-medium text-gray-600">Notatki</th>
               <th className="px-4 py-3 font-medium text-gray-600">Data</th>
               <th className="px-4 py-3"></th>
@@ -122,6 +124,8 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onR
                   )}
                 </td>
                 <td className="px-4 py-3 text-gray-600">{c.position ?? "—"}</td>
+                <td className="px-4 py-3 text-gray-600">{c.salary_expectation ?? "—"}</td>
+                <td className="px-4 py-3 text-gray-600">{c.contact_email ?? "—"}</td>
                 <td className="px-4 py-3 text-gray-500 max-w-xs truncate" title={c.notes ?? ""}>
                   {c.notes ?? "—"}
                 </td>
