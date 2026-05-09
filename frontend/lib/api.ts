@@ -54,6 +54,21 @@ export const api = {
     return apiFetch<Company[]>(`/companies?${q}`);
   },
 
+  patchCompany: (
+    id: string,
+    data: {
+      reply_status?: string | null;
+      reply_received?: string | null;
+      status?: string;
+      position?: string;
+      notes?: string;
+    }
+  ) =>
+    apiFetch<Company>(`/companies/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   addManualCompany: (data: {
     name: string;
     url: string;

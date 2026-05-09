@@ -13,15 +13,28 @@ const STATUS_STYLES: Record<string, string> = {
   applied: "bg-green-50 text-green-700 border-green-200",
 };
 
+const REPLY_LABELS: Record<string, string> = {
+  rejected: "Odrzucono",
+  interview: "Rozmowa",
+  offer: "Oferta",
+};
+
+const REPLY_STYLES: Record<string, string> = {
+  rejected: "bg-red-50 text-red-700 border-red-200",
+  interview: "bg-blue-50 text-blue-700 border-blue-200",
+  offer: "bg-green-50 text-green-700 border-green-200",
+};
+
 type Props = {
   companies: Company[];
   page: number;
   hasMore: boolean;
   onPrev: () => void;
   onNext: () => void;
+  onReply?: (company: Company) => void;
 };
 
-export default function CRMTable({ companies, page, hasMore, onPrev, onNext }: Props) {
+export default function CRMTable({ companies, page, hasMore, onPrev, onNext, onReply }: Props) {
   if (companies.length === 0) {
     return <p className="text-gray-500 text-sm">Brak firm do wyświetlenia.</p>;
   }
@@ -35,6 +48,7 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext }: P
               <th className="px-4 py-3 font-medium text-gray-600">Firma</th>
               <th className="px-4 py-3 font-medium text-gray-600">Czym się zajmuje</th>
               <th className="px-4 py-3 font-medium text-gray-600">Status</th>
+              <th className="px-4 py-3 font-medium text-gray-600">Odpowiedź</th>
               <th className="px-4 py-3 font-medium text-gray-600">Stanowisko</th>
               <th className="px-4 py-3 font-medium text-gray-600">Data</th>
             </tr>
@@ -64,6 +78,45 @@ export default function CRMTable({ companies, page, hasMore, onPrev, onNext }: P
                   >
                     {STATUS_LABELS[c.status] ?? c.status}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  {c.status === "applied" ? (
+                    <div className="flex flex-col gap-1">
+                      {c.reply_status ? (
+                        <>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full border w-fit ${
+                              REPLY_STYLES[c.reply_status] ?? "bg-gray-100 text-gray-600 border-gray-200"
+                            }`}
+                          >
+                            {REPLY_LABELS[c.reply_status] ?? c.reply_status}
+                          </span>
+                          {c.reply_received && (
+                            <span className="text-xs text-gray-400">{c.reply_received}</span>
+                          )}
+                          {onReply && (
+                            <button
+                              onClick={() => onReply(c)}
+                              className="text-xs text-blue-500 hover:underline text-left w-fit"
+                            >
+                              Edytuj
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        onReply && (
+                          <button
+                            onClick={() => onReply(c)}
+                            className="text-xs text-gray-400 hover:text-blue-600 hover:underline text-left"
+                          >
+                            + Ustaw odpowiedź
+                          </button>
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-gray-600">{c.position ?? "—"}</td>
                 <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
