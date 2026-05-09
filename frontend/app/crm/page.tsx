@@ -8,17 +8,24 @@ import CompanyEditModal from "@/components/CompanyEditModal";
 
 const LIMIT = 20;
 
-const STATUS_OPTIONS = [
+type Stats = { applied: number; skipped: number; presented: number; replied: number };
+
+const PILLS = [
   { value: "", label: "Wszystkie" },
-  { value: "applied", label: "Aplikacje wysłane" },
-  { value: "presented", label: "Pokazane" },
-  { value: "skipped", label: "Pominięte" },
+  { value: "applied", label: "Aplikacje", key: "applied" as keyof Stats },
+  { value: "skipped", label: "Pominięte", key: "skipped" as keyof Stats },
+  { value: "presented", label: "Pokazane", key: "presented" as keyof Stats },
 ];
 
 export default function CRMPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("created_at");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -28,45 +35,69 @@ export default function CRMPage() {
   const [editCompany, setEditCompany] = useState<Company | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
-  const fetchPage = useCallback(
-    async (p: number, s: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await api.getCompanies({ page: p, limit: LIMIT, status: s || undefined });
-        setCompanies(data);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Nieznany błąd");
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  const fetchPage = useCallback(async (p: number, s: string, q: string, sortField: string, sortOrder: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getCompanies({
+        page: p, limit: LIMIT,
+        status: s || undefined,
+        search: q || undefined,
+        sort: sortField,
+        order: sortOrder,
+      });
+      setCompanies(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Nieznany błąd");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      setStats(await api.getStats());
+    } catch {}
+  }, []);
+
+  // debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
-    fetchPage(page, status);
-  }, [page, status, fetchPage]);
+    fetchPage(page, status, search, sort, order);
+  }, [page, status, search, sort, order, fetchPage]);
 
-  function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    setStatus(e.target.value);
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+
+  function handleSort(field: string) {
+    if (sort === field) {
+      setOrder(o => o === "desc" ? "asc" : "desc");
+    } else {
+      setSort(field);
+      setOrder("desc");
+    }
+    setPage(1);
+  }
+
+  function handlePillClick(value: string) {
+    setStatus(value);
     setPage(1);
   }
 
   async function handleManualSubmit(data: {
-    name: string;
-    url: string;
-    what_they_do: string;
-    position: string;
-    salary_expectation: string;
-    contact_email: string;
-    notes: string;
+    name: string; url: string; what_they_do: string;
+    position: string; salary_expectation: string; contact_email: string; notes: string;
   }) {
     setModalLoading(true);
     try {
       await api.addManualCompany({
-        name: data.name,
-        url: data.url,
+        name: data.name, url: data.url,
         what_they_do: data.what_they_do || undefined,
         position: data.position || undefined,
         salary_expectation: data.salary_expectation || undefined,
@@ -74,8 +105,9 @@ export default function CRMPage() {
         notes: data.notes || undefined,
       });
       setShowModal(false);
+      fetchStats();
+      fetchPage(1, status, search, sort, order);
       setPage(1);
-      fetchPage(1, status);
     } catch (e) {
       throw e;
     } finally {
@@ -92,7 +124,8 @@ export default function CRMPage() {
         reply_received: data.reply_received || null,
       });
       setReplyCompany(null);
-      fetchPage(page, status);
+      fetchStats();
+      fetchPage(page, status, search, sort, order);
     } catch (e) {
       throw e;
     } finally {
@@ -106,7 +139,7 @@ export default function CRMPage() {
     try {
       await api.patchCompany(editCompany.id, data);
       setEditCompany(null);
-      fetchPage(page, status);
+      fetchPage(page, status, search, sort, order);
     } catch (e) {
       throw e;
     } finally {
@@ -120,65 +153,74 @@ export default function CRMPage() {
     try {
       await api.deleteCompany(editCompany.id);
       setEditCompany(null);
-      fetchPage(page, status);
+      fetchStats();
+      fetchPage(page, status, search, sort, order);
     } catch (e) {
       setEditLoading(false);
       throw e;
     }
   }
 
+  const replyRate = stats && stats.applied > 0
+    ? Math.round((stats.replied / stats.applied) * 100)
+    : null;
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-bold">CRM Dashboard</h1>
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+        >
+          + Dodaj ręcznie
+        </button>
+      </div>
 
-        <div className="flex items-center gap-3">
-          <select
-            value={status}
-            onChange={handleStatusChange}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+      {stats && (
+        <p className="text-sm text-gray-500">
+          {stats.applied} aplikacji · {stats.replied} odpowiedzi
+          {replyRate !== null && ` (${replyRate}%)`}
+        </p>
+      )}
 
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-          >
-            + Dodaj ręcznie
-          </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {PILLS.map(pill => {
+            const count = pill.key ? stats?.[pill.key] : undefined;
+            return (
+              <button
+                key={pill.value}
+                onClick={() => handlePillClick(pill.value)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  status === pill.value
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
+                }`}
+              >
+                {pill.label}{count !== undefined ? ` (${count})` : ""}
+              </button>
+            );
+          })}
         </div>
+
+        <input
+          type="text"
+          placeholder="Szukaj nazwy lub domeny..."
+          value={searchInput}
+          onChange={e => setSearchInput(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-[220px]"
+        />
       </div>
 
       {showModal && (
-        <ManualEntryModal
-          onSubmit={handleManualSubmit}
-          onClose={() => setShowModal(false)}
-          loading={modalLoading}
-        />
+        <ManualEntryModal onSubmit={handleManualSubmit} onClose={() => setShowModal(false)} loading={modalLoading} />
       )}
-
       {replyCompany && (
-        <ReplyModal
-          company={replyCompany}
-          onSubmit={handleReplySubmit}
-          onClose={() => setReplyCompany(null)}
-          loading={replyLoading}
-        />
+        <ReplyModal company={replyCompany} onSubmit={handleReplySubmit} onClose={() => setReplyCompany(null)} loading={replyLoading} />
       )}
-
       {editCompany && (
-        <CompanyEditModal
-          company={editCompany}
-          onSubmit={handleEditSubmit}
-          onDelete={handleEditDelete}
-          onClose={() => setEditCompany(null)}
-          loading={editLoading}
-        />
+        <CompanyEditModal company={editCompany} onSubmit={handleEditSubmit} onDelete={handleEditDelete} onClose={() => setEditCompany(null)} loading={editLoading} />
       )}
 
       {error && (
@@ -194,10 +236,13 @@ export default function CRMPage() {
           companies={companies}
           page={page}
           hasMore={companies.length === LIMIT}
-          onPrev={() => setPage((p) => Math.max(1, p - 1))}
-          onNext={() => setPage((p) => p + 1)}
+          onPrev={() => setPage(p => Math.max(1, p - 1))}
+          onNext={() => setPage(p => p + 1)}
           onReply={setReplyCompany}
           onEdit={setEditCompany}
+          sort={sort}
+          order={order}
+          onSort={handleSort}
         />
       )}
     </div>

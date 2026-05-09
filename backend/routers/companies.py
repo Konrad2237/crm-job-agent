@@ -1,17 +1,28 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 
-from db.client import get_companies, patch_company_fields, delete_company, is_domain_seen, save_manual_company, normalize_domain
+from db.client import get_companies, get_stats, patch_company_fields, delete_company, is_domain_seen, save_manual_company, normalize_domain
 from models.schemas import PatchCompanyRequest, ManualCompanyRequest
 
 router = APIRouter()
 
 
+@router.get("/companies/stats")
+async def company_stats():
+    return await get_stats()
+
+
 @router.get("/companies")
-async def list_companies(page: int = 1, limit: int = 20, status: Optional[str] = None):
-    # Zawsze paginacja — nigdy wszystkich rekordów naraz.
+async def list_companies(
+    page: int = 1,
+    limit: int = 20,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    sort: str = "created_at",
+    order: str = "desc",
+):
     offset = (page - 1) * limit
-    return await get_companies(status=status, limit=limit, offset=offset)
+    return await get_companies(status=status, limit=limit, offset=offset, search=search, sort=sort, order=order)
 
 
 @router.post("/companies/manual")
