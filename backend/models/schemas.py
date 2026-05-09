@@ -32,6 +32,10 @@ class ApplyRequest(BaseModel):
 class ManualCompanyRequest(BaseModel):
     name: str
     url: str
+    what_they_do: Optional[str] = None
+    position: Optional[str] = None
+    salary_expectation: Optional[str] = None
+    contact_email: Optional[str] = None
     notes: Optional[str] = None
 
 
