@@ -133,7 +133,7 @@ crm-job-agent/
 
 ## Aktualny status projektu
 
-**Faza: MWS w toku — Dzień 2 ukończony, Dzień 3 w toku**
+**Faza: MWS w toku — Dzień 3 w toku (frontend zbudowany)**
 *(aktualizuj przy każdej sesji)*
 
 Ukończone:
@@ -152,9 +152,17 @@ Ukończone:
   - [x] `routers/discovery.py` — POST /find, /skip, /apply
   - [x] `routers/companies.py` — GET /companies, PATCH /companies/{id}
   - [x] Test end-to-end: POST /find zwraca prawdziwą firmę, dedup działa
+- [x] Dzień 3: Frontend (Next.js 16 + Tailwind 4)
+  - [x] `lib/api.ts` — klient HTTP dla wszystkich endpointów
+  - [x] `app/page.tsx` — Discovery view z przyciskiem disable + auto-find po apply
+  - [x] `app/crm/page.tsx` — CRM Dashboard z filtrem statusu
+  - [x] `components/CompanyCard.tsx` — karta firmy + przyciski Pomiń/Wysłałem CV
+  - [x] `components/ApplicationForm.tsx` — formularz zapisywania aplikacji
+  - [x] `components/CRMTable.tsx` — tabela z paginacją
+  - [x] Build + TypeScript check: OK
 
 W toku:
-- [ ] Dzień 3: Frontend + deployment
+- [ ] Dzień 3: Deployment (Railway + Vercel)
 
 ---
 
@@ -164,7 +172,7 @@ W toku:
 
 - [x] **[K1]** Dodać `UNIQUE (domain)` do tabeli `companies` w Supabase
 - [x] **[K1]** Używać `ON CONFLICT (domain) DO NOTHING` przy każdym INSERT (`db/client.py`)
-- [ ] **[K1]** Disable przycisku w `CompanyCard.tsx` podczas requesta — Dzień 3
+- [x] **[K1]** Disable przycisku w `CompanyCard.tsx` podczas requesta — zaimplementowane
 - [x] **[K2]** Truncacja treści do 6,000 znaków (`discovery_loop.py`)
 - [x] Plik `.env` w `.gitignore`
 
@@ -175,7 +183,7 @@ W toku:
 - [x] **[P3]** `call_with_retry()` dla Tavily i Anthropic
 - [x] **[P4]** Sprawdzenie pending `presented` na starcie każdego `/find` (`get_recent_presented`)
 - [x] **[P4]** Cleanup `presented` > 24h → `skipped` (`cleanup_stale_presented`)
-- [ ] **[P5]** Auto-trigger kolejnego `/find` po zapisaniu aplikacji — Dzień 3
+- [x] **[P5]** Auto-trigger kolejnego `/find` po zapisaniu aplikacji — zaimplementowane w `app/page.tsx`
 
 ### Umiarkowane (po MWS)
 
@@ -184,7 +192,7 @@ W toku:
 - [ ] **[U3]** CORS — dodać Vercel domain gdy znany (po deploymencie)
 - [ ] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
 - [x] **[U4]** Paginacja `GET /companies` — `?page=1&limit=20&status=applied`
-- [ ] CRM Dashboard (faza 2)
+- [x] CRM Dashboard — `app/crm/page.tsx` + `components/CRMTable.tsx`
 - [ ] Manual Entry Form z OLX/Pracuj.pl (faza 3)
 - [ ] LangSmith tracing (env var + weryfikacja)
 
