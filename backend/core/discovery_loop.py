@@ -21,7 +21,7 @@ def _is_likely_polish(domain: str, text: str) -> bool:
 
 _tavily: AsyncTavilyClient | None = None
 _query_history: list[str] = []  # rolling window — persists across requests within process lifetime
-QUERY_HISTORY_MAX = 20
+QUERY_HISTORY_MAX = 10
 
 
 def _get_tavily() -> AsyncTavilyClient:
