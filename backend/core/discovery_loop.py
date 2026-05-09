@@ -20,6 +20,8 @@ def _is_likely_polish(domain: str, text: str) -> bool:
     return any(c in _POLISH_CHARS for c in text)
 
 _tavily: AsyncTavilyClient | None = None
+_query_history: list[str] = []  # rolling window — persists across requests within process lifetime
+QUERY_HISTORY_MAX = 20
 
 
 def _get_tavily() -> AsyncTavilyClient:
@@ -61,6 +63,7 @@ async def _extract_content(tavily: AsyncTavilyClient, url: str, snippet: str) ->
 
 
 async def find_company() -> dict | None:
+    global _query_history
     try:
         async with asyncio.timeout(25):  # twardy limit — Railway zerwie połączenie po 30s
             # Krok 0: czy jest firma z niepodjętą decyzją z ostatnich 24h?
@@ -73,12 +76,15 @@ async def find_company() -> dict | None:
             await cleanup_stale_presented()
 
             tavily = _get_tavily()
-            previous_queries: list[str] = []
+            previous_queries: list[str] = list(_query_history)
 
             for attempt in range(MAX_ATTEMPTS):
                 # Krok 1: Haiku generuje zapytanie (zna poprzednie żeby się nie powtarzać)
                 query = await call_with_retry(lambda: generate_query(previous_queries))
                 previous_queries.append(query)
+                _query_history.append(query)
+                if len(_query_history) > QUERY_HISTORY_MAX:
+                    _query_history.pop(0)
 
                 # Krok 2: Tavily szuka — zwraca max 5 URLi z tytułami i snippetami
                 search_resp = await call_with_retry(

@@ -12,18 +12,18 @@ _model = ChatAnthropic(
 
 SYSTEM_PROMPT = """Generujesz zapytania do wyszukiwarki internetowej, żeby znajdować polskie firmy zajmujące się sztuczną inteligencją.
 
-Szukaj firm które oferują:
-- chatboty i wirtualnych asystentów dla biznesu
-- agentów AI i automatyzacje procesów
-- rozwiązania oparte na dużych modelach językowych (LLM)
-- systemy RAG (retrieval-augmented generation)
-- generatywne AI w produktach B2B lub B2C
-- konsulting i wdrożenia AI
+Szukaj firm które oferują usługi lub produkty AI — mogą to być firmy stricte AI albo firmy technologiczne z obszarem AI.
+
+Rotuj po tych wymiarach żeby eksplorować różne obszary:
+- Branże: fintech, medtech, legaltech, HR tech, e-commerce, produkcja, logistyka, edukacja, marketing, nieruchomości
+- Technologie: chatbot, RAG, computer vision, NLP, predykcja, rekomendacje, automatyzacja dokumentów, speech recognition
+- Typ firmy: startup, software house, consulting AI, product company, agencja AI
+- Miasta: Warszawa, Kraków, Wrocław, Poznań, Trójmiasto, Łódź, Katowice
 
 Zasady:
 - Firmy muszą być POLSKIE (siedziba w Polsce, strona po polsku, domena .pl)
-- Zapytanie może być po polsku lub angielsku — wybierz co da lepsze wyniki
-- Każde zapytanie INNE niż poprzednie — zmieniaj frazy, branże, słowa kluczowe
+- Zapytanie może być po polsku lub angielsku — wybierz co da lepsze wyniki dla danej branży
+- Każde zapytanie INNE niż poprzednie — zmieniaj kombinację wymiarów
 - Zwróć TYLKO treść zapytania, żadnych wyjaśnień ani cudzysłowów"""
 
 
