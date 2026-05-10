@@ -46,6 +46,16 @@ async def is_domain_seen(domain: str) -> bool:
     return len(result.data) > 0
 
 
+async def get_seen_domains(domains: list[str]) -> set[str]:
+    if not domains:
+        return set()
+    client = await _get_client()
+    result = await safe_db_call(
+        client.table("companies").select("domain").in_("domain", domains).execute()
+    )
+    return {row["domain"] for row in result.data}
+
+
 async def save_company(name: str, url: str, domain: str, what_they_do: str) -> dict:
     client = await _get_client()
     result = await safe_db_call(
