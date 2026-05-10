@@ -9,7 +9,7 @@ from core.page_verifier import verify_page
 
 MAX_ATTEMPTS = 3          # ile razy generujemy nowe zapytanie Tavily
 MAX_RESULTS = 5           # ile URLi Tavily zwraca na jedno zapytanie
-MAX_CONTENT_CHARS = 6_000 # twardy limit treści przed wysłaniem do Haiku
+MAX_CONTENT_CHARS = 2_000 # twardy limit treści przed wysłaniem do Haiku
 
 _POLISH_CHARS = set("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ")
 
