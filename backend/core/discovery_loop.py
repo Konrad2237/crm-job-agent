@@ -3,7 +3,7 @@ import os
 from fastapi import HTTPException
 from tavily import AsyncTavilyClient
 
-from db.client import normalize_domain, is_domain_seen, save_company, save_skipped_domain, get_recent_presented, cleanup_stale_presented
+from db.client import normalize_domain, get_seen_domains, save_company, save_skipped_domain, get_recent_presented, cleanup_stale_presented
 from core.query_generator import generate_query
 from core.page_verifier import verify_page
 
@@ -91,17 +91,20 @@ async def find_company() -> dict | None:
                     lambda q=query: tavily.search(q, max_results=MAX_RESULTS)
                 )
 
+                # Krok 3: normalizacja domen + batch dedup — 1 zapytanie zamiast 5
+                candidates = []
                 for result in search_resp.get("results", []):
                     url = result.get("url", "")
                     if not url:
                         continue
-
-                    # Krok 3: normalizacja domeny + dedup — czy już w bazie?
                     domain = normalize_domain(url)
-                    if not domain:
-                        continue
+                    if domain:
+                        candidates.append((domain, url, result))
 
-                    if await is_domain_seen(domain):
+                seen = await get_seen_domains([d for d, _, _ in candidates])
+
+                for domain, url, result in candidates:
+                    if domain in seen:
                         continue
 
                     # Krok 3.5: heurystyczny pre-filter — zero tokenów
