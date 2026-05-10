@@ -3,7 +3,7 @@ import os
 from fastapi import HTTPException
 from tavily import AsyncTavilyClient
 
-from db.client import normalize_domain, is_domain_seen, save_company, get_recent_presented, cleanup_stale_presented
+from db.client import normalize_domain, is_domain_seen, save_company, save_skipped_domain, get_recent_presented, cleanup_stale_presented
 from core.query_generator import generate_query
 from core.page_verifier import verify_page
 
@@ -121,6 +121,7 @@ async def find_company() -> dict | None:
                     try:
                         verification = await call_with_retry(lambda c=content: verify_page(c), retries=1)
                     except Exception:
+                        await save_skipped_domain(result.get("title", domain), url, domain)
                         continue  # błąd parsowania — skip URL, nie przepalaj kolejnych tokenów
 
                     if not verification.is_polish or not verification.is_ai_company or not verification.is_company_page:

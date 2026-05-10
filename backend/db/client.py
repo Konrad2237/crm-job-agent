@@ -126,6 +126,19 @@ async def save_manual_company(name: str, url: str, domain: str, data: dict) -> d
     return result.data[0]
 
 
+async def save_skipped_domain(name: str, url: str, domain: str) -> None:
+    client = await _get_client()
+    await safe_db_call(
+        client.table("companies")
+        .upsert(
+            {"name": name, "url": url, "domain": domain, "status": "skipped"},
+            on_conflict="domain",
+            ignore_duplicates=True,
+        )
+        .execute()
+    )
+
+
 async def patch_company_fields(company_id: str, payload: dict) -> dict:
     client = await _get_client()
     result = await safe_db_call(
