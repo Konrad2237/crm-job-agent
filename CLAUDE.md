@@ -81,9 +81,9 @@ crm-job-agent/
   def normalize_domain(url: str) -> str:
       return urlparse(url).netloc.lower().removeprefix("www.")
   ```
-- **Zawsze truncuj treść strony** przed wysłaniem do Haiku — max 6,000 znaków:
+- **Zawsze truncuj treść strony** przed wysłaniem do Haiku — max 2,000 znaków:
   ```python
-  content = raw_content[:6_000]
+  content = raw_content[:2_000]
   ```
 - **Zawsze używaj `call_with_retry()`** dla wywołań Tavily i Anthropic API (retry 2×, delay 2 sek).
 - **Zawsze używaj `safe_db_call()`** dla wywołań Supabase (łapie wyjątki, zwraca 503).
@@ -106,9 +106,7 @@ crm-job-agent/
 
 ### Git
 
-- **Każda zmiana idzie na nowy branch**, nigdy bezpośrednio na `main`.
-- **Schemat nazewnictwa branchy:** `feature/nazwa`, `fix/nazwa`, `refactor/nazwa`.
-- **Na `main` tylko po review** — użytkownik sprawdza, akceptuje, dopiero wtedy merge.
+- **Bezpośrednie pushe na `main`** — jeden użytkownik, każda zmiana testowana lokalnie przed pushem. Branche tylko przy dużych/ryzykownych zmianach.
 - **Nigdy `git push --force` na `main`.**
 - **`.env` jest w `.gitignore`** — sprawdź zanim zrobisz pierwszy commit.
 
@@ -124,7 +122,7 @@ crm-job-agent/
 | **Nie robimy mikroserwisów** | Jeden użytkownik, jeden monolit na Railway. Mikroserwisy rozwiązują problemy skali których nie mamy. |
 | **Nie używamy serverless** | Discovery loop trwa 10–25 sek, przekracza limity timeout Vercel Functions. |
 | **Nie pobieramy wszystkich rekordów naraz** | Przy 500+ rekordach frontend crashnie. Zawsze paginacja. |
-| **Nie wysyłamy pełnej treści strony do LLM** | Max 6,000 znaków. Reszta to blog i artykuły — niepotrzebne do klasyfikacji. |
+| **Nie wysyłamy pełnej treści strony do LLM** | Max 2,000 znaków. Reszta to blog i artykuły — niepotrzebne do klasyfikacji. |
 | **Nie oceniamy dopasowania kandydata** | Agent tylko weryfikuje: polska strona + usługi AI. Ocena należy do użytkownika. |
 | **Nie szukamy ofert pracy ani wymagań** | Szukamy firm. Użytkownik sam ocenia czy aplikować. |
 | **Nie budujemy multi-user** | Jeden użytkownik, brak auth, brak izolacji danych między kontami. |
@@ -164,11 +162,21 @@ Ukończone:
   - [x] Frontend na Vercel: `https://crm-job-agent.vercel.app`
   - [x] Fix: `is_company_page` w page_verifier — odrzuca listy rankingowe
 
-Po MWS — do zrobienia:
-- [ ] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
-- [ ] Optymalizacja tokenów: skrócić limit treści 6000 → 2000-3000 znaków
-- [ ] Heurystyczny pre-filter (.pl / polskie znaki) przed wywołaniem Haiku
-- [ ] Manual Entry Form z OLX/Pracuj.pl (faza 3)
+Po MWS — ukończone:
+- [x] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
+- [x] Heurystyczny pre-filter (.pl / polskie znaki) przed wywołaniem Haiku
+- [x] Manual Entry Form z OLX/Pracuj.pl
+- [x] Śledzenie odpowiedzi (reply_status / reply_received)
+- [x] Edycja i usuwanie firm z CRM
+- [x] Search + sort w CRM (backendowy, działa na całej bazie)
+- [x] Stats bar z licznikami statusów
+- [x] `what_they_do: str = ""` — fix ValidationError gdy Haiku pomija pole
+- [x] `is_company_page` w page_verifier — odrzuca listy rankingowe
+- [x] Rolling window 10 ostatnich zapytań — agent nie kręci się w kółko
+- [x] Domeny failujące `verify_page` zapisywane jako `skipped` — nie wracają w kolejnych sesjach
+- [x] `MAX_CONTENT_CHARS` 6000 → 2000 — ~66% mniej tokenów input dla page_verifier
+- [x] Batch dedup domen — 1 zapytanie DB per attempt zamiast 5
+- [x] `max_tokens` page_verifier 150 → 100
 
 ---
 
@@ -196,10 +204,10 @@ Po MWS — do zrobienia:
 - [x] **[U1]** Fallback na snippet gdy Tavily Extract zwraca < 300 znaków (`discovery_loop.py`)
 - [x] **[U2]** `normalize_domain()` — stripuje `www.` (`db/client.py`)
 - [x] **[U3]** CORS — `FRONTEND_URL` ustawiony w Railway
-- [ ] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
+- [x] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
 - [x] **[U4]** Paginacja `GET /companies` — `?page=1&limit=20&status=applied`
 - [x] CRM Dashboard — `app/crm/page.tsx` + `components/CRMTable.tsx`
-- [ ] Manual Entry Form z OLX/Pracuj.pl (faza 3)
+- [x] Manual Entry Form z OLX/Pracuj.pl
 - [x] LangSmith tracing — env vars ustawione w Railway
 
 ---
