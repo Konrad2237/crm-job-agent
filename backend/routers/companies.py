@@ -27,8 +27,8 @@ async def list_companies(
 
 @router.post("/companies/manual")
 async def add_manual(data: ManualCompanyRequest):
-    domain = normalize_domain(data.url)
-    if await is_domain_seen(domain):
+    domain = normalize_domain(data.url) if data.url else None
+    if domain and await is_domain_seen(domain):
         raise HTTPException(409, "Firma z tą domeną już jest w bazie.")
     payload = data.model_dump(exclude={"name", "url"}, exclude_none=True)
     return await save_manual_company(data.name, data.url, domain, payload)

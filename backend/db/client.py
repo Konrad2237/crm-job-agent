@@ -10,6 +10,8 @@ _supabase: AsyncClient | None = None
 def normalize_domain(url: str) -> str:
     # "https://www.firma.pl/o-nas" → "firma.pl"
     # Bez tego "www.firma.pl" i "firma.pl" to dwa różne rekordy w dedup.
+    if "://" not in url:
+        url = "https://" + url
     return urlparse(url).netloc.lower().removeprefix("www.")
 
 
@@ -117,7 +119,7 @@ async def update_company_status(company_id: str, status: str, extra: dict = {}) 
     return result.data[0]
 
 
-async def save_manual_company(name: str, url: str, domain: str, data: dict) -> dict:
+async def save_manual_company(name: str, url: str | None, domain: str | None, data: dict) -> dict:
     client = await _get_client()
     now = datetime.now(timezone.utc).isoformat()
     result = await safe_db_call(
