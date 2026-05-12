@@ -17,6 +17,26 @@ _ARTICLE_PATH_PATTERNS = (
     "/blog/", "/news/", "/artykul", "/artykuł", "/ranking",
     "/top-", "/lista-", "/wpis/", "/post/", "/wiedza/", "/porady/",
 )
+# Sygnały artykułu w tytule wyniku — niezawodne, tytuły artykułów mają stałą strukturę
+_ARTICLE_TITLE_PATTERNS = (
+    "ranking",
+    "top 10", "top 5", "top 15", "top 20",
+    "lista firm",
+    "zestawienie firm",
+    "najlepsze firmy",
+    "jak wybrać",
+    "jak działa",
+    "co to jest",
+    "poradnik",
+    "przewodnik",
+    " firm ai",   # "15 firm AI...", "polskie firmy AI" itp.
+)
+# Sygnały artykułu w snippecie — tylko te które NIGDY nie pojawiają się na stronie firmowej
+_ARTICLE_SNIPPET_SIGNALS = (
+    "w tym artykule",
+    "przeczytaj artykuł",
+    "redakcja:",
+)
 
 
 def _is_likely_polish(domain: str, text: str) -> bool:
@@ -28,6 +48,16 @@ def _is_likely_polish(domain: str, text: str) -> bool:
 def _is_likely_article(url: str) -> bool:
     path = urlparse(url).path.lower()
     return any(pat in path for pat in _ARTICLE_PATH_PATTERNS)
+
+
+def _is_likely_article_title(title: str) -> bool:
+    lower = title.lower()
+    return any(pat in lower for pat in _ARTICLE_TITLE_PATTERNS)
+
+
+def _is_likely_article_snippet(snippet: str) -> bool:
+    lower = snippet.lower()
+    return any(sig in lower for sig in _ARTICLE_SNIPPET_SIGNALS)
 
 _tavily: AsyncTavilyClient | None = None
 _query_history: list[str] = []  # rolling window — persists across requests within process lifetime
@@ -75,7 +105,7 @@ async def _extract_content(tavily: AsyncTavilyClient, url: str, snippet: str) ->
 async def find_company() -> dict | None:
     global _query_history
     try:
-        async with asyncio.timeout(25):  # twardy limit — chroni przed przepaleniem tokenów przy braku wyników
+        async with asyncio.timeout(45):  # zwiększone z 25 — Extract usunięty, ale 3 próby z Haiku mogą zająć 30s
             # Krok 0: czy jest firma z niepodjętą decyzją z ostatnich 24h?
             # Scenariusz: użytkownik zamknął przeglądarkę przed kliknięciem Pomiń/Aplikuj.
             pending = await get_recent_presented()
@@ -118,18 +148,29 @@ async def find_company() -> dict | None:
                         continue
 
                     # Krok 3.5: heurystyczny pre-filter — zero tokenów
-                    # Odrzuca angielskie strony i artykuły zanim zapłacimy za Extract i Haiku
+                    # Odrzuca angielskie strony i artykuły zanim zapłacimy za Haiku
                     snippet = result.get("content", "")
+                    title = result.get("title", "")
                     if not _is_likely_polish(domain, snippet):
                         continue
                     if _is_likely_article(url):
                         continue
+                    if _is_likely_article_title(title):
+                        continue
+                    if _is_likely_article_snippet(snippet):
+                        continue
 
-                    # Krok 4: pobierz treść strony (z fallbackiem na snippet)
-                    content = await _extract_content(tavily, url, snippet)
+                    # Krok 4: snippet jako treść do klasyfikacji — pomijamy Tavily Extract
+                    # Snippet (200-500 znaków) wystarczy Haiku do oceny czy to firma AI.
+                    # Extract dodawał 2-5 sek latencji i 1500+ tokenów input — usunięty.
+                    # Fallback na Extract tylko gdy snippet jest ekstremalnie krótki.
+                    if len(snippet) >= 80:
+                        content = snippet[:MAX_CONTENT_CHARS]
+                    else:
+                        content = await _extract_content(tavily, url, snippet)
 
                     if len(content) < 50:
-                        continue  # naprawdę nic nie ma — skip
+                        continue
 
                     # Krok 5: Haiku klasyfikuje — polska firma AI?
                     # retries=1 zamiast 2 — przy błędzie parsowania Haiku ponowienie rzadko pomaga
@@ -154,5 +195,7 @@ async def find_company() -> dict | None:
 
             return None  # po 3 próbach nic nie znaleziono
 
-    except asyncio.TimeoutError:
+    except (asyncio.TimeoutError, asyncio.CancelledError):
+        # asyncio.timeout() wewnętrznie używa CancelledError — LangChain może go przebić
+        # zanim asyncio.timeout.__aexit__ zdąży go zamienić na TimeoutError
         raise HTTPException(503, "Wyszukiwanie trwa za długo. Spróbuj ponownie.")

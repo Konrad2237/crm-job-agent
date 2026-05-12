@@ -26,11 +26,19 @@ Rotuj po tych wymiarach żeby eksplorować różne obszary:
 
 Zasady:
 - Firmy muszą być POLSKIE (siedziba w Polsce, strona po polsku, domena .pl)
-- Zapytanie może być po polsku lub angielsku — wybierz co da lepsze wyniki dla danej branży
 - Każde zapytanie INNE niż poprzednie — zmieniaj kombinację branży, typu firmy i oferowanej usługi
-- Zapytanie ma znajdować STRONY FIRMOWE z ofertą usług — NIE artykuły, poradniki, rankingi ani blogi
-- Używaj słów które trafiają na strony firmowe: "usługi", "oferta", "rozwiązania", "wdrożenia", "dla firm"
-- Zwróć TYLKO treść zapytania, żadnych wyjaśnień ani cudzysłowów"""
+- KAŻDE zapytanie musi zawierać przynajmniej jedno słowo ze zbioru: "oferta", "usługi", "wdrożenia", "rozwiązania", "dla firm", "platforma", "system" — dzięki temu wyszukiwarka znajdzie strony firmowe, nie artykuły
+- Zwróć TYLKO treść zapytania, żadnych wyjaśnień ani cudzysłowów
+
+Przykłady dobrych zapytań (wzoruj się na tej strukturze):
+- "agenci AI automatyzacja procesów biznesowych polska firma oferta"
+- "chatbot AI obsługa klienta wdrożenia dla e-commerce Polska"
+- "platforma AI analityka medyczna Polska usługi"
+- "RAG system wyszukiwania dokumentów prawnych polska firma"
+- "voicebot AI call center wdrożenia dla firm"
+- "AI software house NLP machine learning projekty polska"
+- "automatyzacja HR rekrutacja AI rozwiązania dla firm Polska"
+- "wdrożenia LLM dla branży finansowej polska firma konsulting\""""
 
 
 async def generate_query(previous_queries: list[str]) -> str:
