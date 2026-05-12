@@ -23,13 +23,13 @@ Kryterium 1 — is_polish: czy to polska firma?
 - Oddziały zagranicznych korporacji w Polsce = NIE
 
 Kryterium 2 — is_ai_company: czy to strona firmy która SPRZEDAJE usługi lub produkty AI?
-- TAK: chatboty, voiceboty, agenci AI, automatyzacje LLM, RAG, wdrożenia AI, AI consulting, własny produkt SaaS oparty o AI, software house z ofertą AI
+- TAK: chatboty, voiceboty, agenci AI, automatyzacje LLM, RAG, wdrożenia AI, AI consulting, własny produkt SaaS oparty o AI, software house z ofertą AI — nawet jeśli firma oferuje też szkolenia lub warsztaty jako usługę dodatkową
 - NIE — każde z poniższych dyskwalifikuje:
   • artykuł, blog, news, ranking, zestawienie lub lista firm (nawet jeśli wymienia firmy AI)
   • katalog firm, portal porównawczy, agregator
   • firma tylko wspomina AI bez konkretnej oferty usług
-  • kursy i szkolenia z AI
-  • e-commerce lub marketing który "używa AI"
+  • firma WYŁĄCZNIE sprzedaje kursy lub szkolenia z AI, bez żadnych wdrożeń
+  • e-commerce lub marketing który "używa AI" ale nie sprzedaje AI jako usługi
 
 what_they_do: jednozdaniowy opis (np. "chatboty dla e-commerce, integracje GPT-4") — tylko gdy oba kryteria TAK. W przeciwnym razie pusty string."""
 
