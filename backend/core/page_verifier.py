@@ -6,8 +6,7 @@ from pydantic import BaseModel
 class PageVerification(BaseModel):
     is_polish: bool
     is_ai_company: bool
-    is_company_page: bool  # False dla list rankingów, artykułów, katalogów firm
-    what_they_do: str = ""  # pusty gdy którekolwiek kryterium False — Haiku czasem pomija pole
+    what_they_do: str = ""  # pusty gdy którekolwiek kryterium False
 
 
 # temperature=0.0 — klasyfikacja wymaga determinizmu, nie kreatywności
@@ -17,24 +16,22 @@ _model = ChatAnthropic(
     temperature=0.0,
 ).with_structured_output(PageVerification)
 
-SYSTEM_PROMPT = """Klasyfikujesz strony internetowe firm pod kątem dwóch kryteriów.
+SYSTEM_PROMPT = """Klasyfikujesz fragmenty stron internetowych.
 
 Kryterium 1 — is_polish: czy to polska firma?
-- Strona głównie po polsku LUB siedziba w Polsce LUB domena .pl
-- Oddziały zagranicznych korporacji w Polsce = NIE (szukamy polskich firm)
+- Treść głównie po polsku LUB siedziba w Polsce LUB domena .pl
+- Oddziały zagranicznych korporacji w Polsce = NIE
 
-Kryterium 2 — is_ai_company: czy firma oferuje usługi lub produkty z obszaru AI?
-- TAK: chatboty, wirtualni asystenci, agenci AI, automatyzacje LLM, RAG, generatywne AI, wdrożenia modeli językowych, firmy IT/tech które mają AI jako jeden z oferowanych obszarów usług lub produktów
-- NIE: kursy i szkolenia z AI (edukacja, akademia, bootcamp), firma tylko wspomina AI jako buzzword bez konkretnej oferty, zwykłe oprogramowanie bez AI, consulting IT bez AI, e-commerce, marketing bez AI
+Kryterium 2 — is_ai_company: czy to strona firmy która SPRZEDAJE usługi lub produkty AI?
+- TAK: chatboty, voiceboty, agenci AI, automatyzacje LLM, RAG, wdrożenia AI, AI consulting, własny produkt SaaS oparty o AI, software house z ofertą AI
+- NIE — każde z poniższych dyskwalifikuje:
+  • artykuł, blog, news, ranking, zestawienie lub lista firm (nawet jeśli wymienia firmy AI)
+  • katalog firm, portal porównawczy, agregator
+  • firma tylko wspomina AI bez konkretnej oferty usług
+  • kursy i szkolenia z AI
+  • e-commerce lub marketing który "używa AI"
 
-Kryterium 3 — is_company_page: czy to strona jednej konkretnej firmy?
-- TAK: strona główna lub podstrona firmy opisująca jej ofertę/usługi
-- NIE: artykuł z listą firm ("top 10 chatbotów"), katalog firm, ranking, blog, news, portal porównawczy
-
-what_they_do: tylko gdy WSZYSTKIE trzy kryteria TAK — jednozdaniowy opis np. "chatboty dla e-commerce, integracje GPT-4".
-Gdy którekolwiek kryterium NIE — zwróć pusty string.
-
-Klasyfikuj wyłącznie na podstawie treści którą dostajesz. Nie zgaduj."""
+what_they_do: jednozdaniowy opis (np. "chatboty dla e-commerce, integracje GPT-4") — tylko gdy oba kryteria TAK. W przeciwnym razie pusty string."""
 
 
 async def verify_page(content: str) -> PageVerification:

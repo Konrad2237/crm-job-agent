@@ -189,8 +189,8 @@ async def find_company() -> dict | None:
                         print(f"[SKIP:haiku-err] {domain}")
                         continue  # błąd parsowania — skip URL, nie przepalaj kolejnych tokenów
 
-                    if not verification.is_polish or not verification.is_ai_company or not verification.is_company_page:
-                        print(f"[SKIP:haiku]   {domain} | pl={verification.is_polish} ai={verification.is_ai_company} page={verification.is_company_page}")
+                    if not verification.is_polish or not verification.is_ai_company:
+                        print(f"[SKIP:haiku]   {domain} | pl={verification.is_polish} ai={verification.is_ai_company}")
                         continue
 
                     # Krok 6: zapisz do bazy i zwróć
