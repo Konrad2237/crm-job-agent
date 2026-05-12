@@ -121,6 +121,7 @@ async def find_company() -> dict | None:
             for attempt in range(MAX_ATTEMPTS):
                 # Krok 1: Haiku generuje zapytanie (zna poprzednie żeby się nie powtarzać)
                 query = await call_with_retry(lambda: generate_query(previous_queries))
+                print(f"[QUERY #{attempt+1}] {query}")
                 previous_queries.append(query)
                 _query_history.append(query)
                 if len(_query_history) > QUERY_HISTORY_MAX:
@@ -145,6 +146,7 @@ async def find_company() -> dict | None:
 
                 for domain, url, result in candidates:
                     if domain in seen:
+                        print(f"[SKIP:seen]    {domain}")
                         continue
 
                     # Krok 3.5: heurystyczny pre-filter — zero tokenów
@@ -152,12 +154,16 @@ async def find_company() -> dict | None:
                     snippet = result.get("content", "")
                     title = result.get("title", "")
                     if not _is_likely_polish(domain, snippet):
+                        print(f"[SKIP:not-pl]  {domain} | {title}")
                         continue
                     if _is_likely_article(url):
+                        print(f"[SKIP:url-pat] {domain} | {title}")
                         continue
                     if _is_likely_article_title(title):
+                        print(f"[SKIP:title]   {domain} | {title}")
                         continue
                     if _is_likely_article_snippet(snippet):
+                        print(f"[SKIP:snippet] {domain} | {title}")
                         continue
 
                     # Krok 4: snippet jako treść do klasyfikacji — pomijamy Tavily Extract
@@ -170,20 +176,25 @@ async def find_company() -> dict | None:
                         content = await _extract_content(tavily, url, snippet)
 
                     if len(content) < 50:
+                        print(f"[SKIP:no-content] {domain} | {title}")
                         continue
 
                     # Krok 5: Haiku klasyfikuje — polska firma AI?
                     # retries=1 zamiast 2 — przy błędzie parsowania Haiku ponowienie rzadko pomaga
+                    print(f"[HAIKU]        {domain} | {title}")
                     try:
                         verification = await call_with_retry(lambda c=content: verify_page(c), retries=1)
                     except Exception:
                         await save_skipped_domain(result.get("title", domain), url, domain)
+                        print(f"[SKIP:haiku-err] {domain}")
                         continue  # błąd parsowania — skip URL, nie przepalaj kolejnych tokenów
 
                     if not verification.is_polish or not verification.is_ai_company or not verification.is_company_page:
+                        print(f"[SKIP:haiku]   {domain} | pl={verification.is_polish} ai={verification.is_ai_company} page={verification.is_company_page}")
                         continue
 
                     # Krok 6: zapisz do bazy i zwróć
+                    print(f"[FOUND]        {domain} | {title} | {verification.what_they_do}")
                     name = result.get("title", domain)
                     company = await save_company(
                         name=name,
