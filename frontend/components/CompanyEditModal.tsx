@@ -107,31 +107,31 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="block sm:col-span-2">
-            <span className="text-sm text-gray-700 font-medium">Nazwa firmy</span>
+            <span className="text-sm text-gray-900 font-medium">Nazwa firmy</span>
             <input
               type="text"
               value={form.name}
               onChange={set("name")}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="text-sm text-gray-700 font-medium">Czym się zajmuje</span>
+            <span className="text-sm text-gray-900 font-medium">Czym się zajmuje</span>
             <input
               type="text"
               value={form.what_they_do}
               onChange={set("what_they_do")}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm text-gray-700 font-medium">Status</span>
+            <span className="text-sm text-gray-900 font-medium">Status</span>
             <select
               value={form.status}
               onChange={set("status")}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
               {STATUS_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -142,45 +142,45 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
           </label>
 
           <label className="block">
-            <span className="text-sm text-gray-700 font-medium">Stanowisko</span>
+            <span className="text-sm text-gray-900 font-medium">Stanowisko</span>
             <input
               type="text"
               placeholder="np. AI Engineer"
               value={form.position}
               onChange={set("position")}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm text-gray-700 font-medium">Oczekiwania finansowe</span>
+            <span className="text-sm text-gray-900 font-medium">Oczekiwania finansowe</span>
             <input
               type="text"
               placeholder="np. 15 000 PLN netto"
               value={form.salary_expectation}
               onChange={set("salary_expectation")}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm text-gray-700 font-medium">E-mail kontaktowy</span>
+            <span className="text-sm text-gray-900 font-medium">E-mail kontaktowy</span>
             <input
               type="email"
               placeholder="np. hr@firma.pl"
               value={form.contact_email}
               onChange={set("contact_email")}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="text-sm text-gray-700 font-medium">Notatki</span>
+            <span className="text-sm text-gray-900 font-medium">Notatki</span>
             <textarea
               rows={3}
               value={form.notes}
               onChange={set("notes")}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
             />
           </label>
         </div>
