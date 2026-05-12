@@ -1,5 +1,6 @@
 import asyncio
 import os
+from urllib.parse import urlparse
 from fastapi import HTTPException
 from tavily import AsyncTavilyClient
 
@@ -12,12 +13,21 @@ MAX_RESULTS = 5           # ile URLi Tavily zwraca na jedno zapytanie
 MAX_CONTENT_CHARS = 2_000 # twardy limit treści przed wysłaniem do Haiku
 
 _POLISH_CHARS = set("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ")
+_ARTICLE_PATH_PATTERNS = (
+    "/blog/", "/news/", "/artykul", "/artykuł", "/ranking",
+    "/top-", "/lista-", "/wpis/", "/post/", "/wiedza/", "/porady/",
+)
 
 
 def _is_likely_polish(domain: str, text: str) -> bool:
     if domain.endswith(".pl"):
         return True
     return any(c in _POLISH_CHARS for c in text)
+
+
+def _is_likely_article(url: str) -> bool:
+    path = urlparse(url).path.lower()
+    return any(pat in path for pat in _ARTICLE_PATH_PATTERNS)
 
 _tavily: AsyncTavilyClient | None = None
 _query_history: list[str] = []  # rolling window — persists across requests within process lifetime
@@ -108,9 +118,11 @@ async def find_company() -> dict | None:
                         continue
 
                     # Krok 3.5: heurystyczny pre-filter — zero tokenów
-                    # Odrzuca angielskie strony zanim zapłacimy za Extract i Haiku
+                    # Odrzuca angielskie strony i artykuły zanim zapłacimy za Extract i Haiku
                     snippet = result.get("content", "")
                     if not _is_likely_polish(domain, snippet):
+                        continue
+                    if _is_likely_article(url):
                         continue
 
                     # Krok 4: pobierz treść strony (z fallbackiem na snippet)

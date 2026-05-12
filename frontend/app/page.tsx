@@ -41,6 +41,27 @@ export default function DiscoveryPage() {
     }
   }
 
+  async function handleSave(data: {
+    position: string;
+    salary_expectation: string;
+    contact_email: string;
+    notes: string;
+  }) {
+    if (!company) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await api.applyCompany(company.id, data);
+      setCompany(null);
+      setPhase("idle");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Nieznany błąd");
+      setPhase("found");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleApply(data: {
     position: string;
     salary_expectation: string;
@@ -52,7 +73,6 @@ export default function DiscoveryPage() {
     setError(null);
     try {
       await api.applyCompany(company.id, data);
-      // Po zapisaniu aplikacji automatycznie szukamy kolejnej firmy
       setCompany(null);
       setPhase("idle");
       const next = await api.findCompany();
@@ -101,6 +121,7 @@ export default function DiscoveryPage() {
           {phase === "applying" && (
             <ApplicationForm
               onSubmit={handleApply}
+              onSave={handleSave}
               onCancel={() => setPhase("found")}
               loading={loading}
             />

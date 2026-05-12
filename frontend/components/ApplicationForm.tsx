@@ -10,11 +10,12 @@ type FormData = {
 
 type Props = {
   onSubmit: (data: FormData) => Promise<void>;
+  onSave: (data: FormData) => Promise<void>;
   onCancel: () => void;
   loading: boolean;
 };
 
-export default function ApplicationForm({ onSubmit, onCancel, loading }: Props) {
+export default function ApplicationForm({ onSubmit, onSave, onCancel, loading }: Props) {
   const [form, setForm] = useState<FormData>({
     position: "",
     salary_expectation: "",
@@ -37,7 +38,7 @@ export default function ApplicationForm({ onSubmit, onCancel, loading }: Props) 
             placeholder="np. AI Engineer"
             value={form.position}
             onChange={set("position")}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </label>
 
@@ -48,7 +49,7 @@ export default function ApplicationForm({ onSubmit, onCancel, loading }: Props) 
             placeholder="np. 15 000 PLN netto"
             value={form.salary_expectation}
             onChange={set("salary_expectation")}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </label>
 
@@ -59,7 +60,7 @@ export default function ApplicationForm({ onSubmit, onCancel, loading }: Props) 
             placeholder="np. hr@firma.pl"
             value={form.contact_email}
             onChange={set("contact_email")}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </label>
       </div>
@@ -71,7 +72,7 @@ export default function ApplicationForm({ onSubmit, onCancel, loading }: Props) 
           placeholder="Dodatkowe informacje..."
           value={form.notes}
           onChange={set("notes")}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
         />
       </label>
 
@@ -82,6 +83,13 @@ export default function ApplicationForm({ onSubmit, onCancel, loading }: Props) 
           className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
         >
           Anuluj
+        </button>
+        <button
+          onClick={() => onSave(form)}
+          disabled={loading}
+          className="px-4 py-2 text-sm rounded-lg border border-green-600 text-green-700 hover:bg-green-50 disabled:opacity-50"
+        >
+          {loading ? "Zapisuję..." : "Zapisz"}
         </button>
         <button
           onClick={() => onSubmit(form)}
