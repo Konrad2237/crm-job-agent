@@ -107,7 +107,7 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="block sm:col-span-2">
-            <span className="text-sm text-gray-600">Nazwa firmy</span>
+            <span className="text-sm text-gray-700 font-medium">Nazwa firmy</span>
             <input
               type="text"
               value={form.name}
@@ -117,7 +117,7 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="text-sm text-gray-600">Czym się zajmuje</span>
+            <span className="text-sm text-gray-700 font-medium">Czym się zajmuje</span>
             <input
               type="text"
               value={form.what_they_do}
@@ -127,7 +127,7 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
           </label>
 
           <label className="block">
-            <span className="text-sm text-gray-600">Status</span>
+            <span className="text-sm text-gray-700 font-medium">Status</span>
             <select
               value={form.status}
               onChange={set("status")}
@@ -142,7 +142,7 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
           </label>
 
           <label className="block">
-            <span className="text-sm text-gray-600">Stanowisko</span>
+            <span className="text-sm text-gray-700 font-medium">Stanowisko</span>
             <input
               type="text"
               placeholder="np. AI Engineer"
@@ -153,7 +153,7 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
           </label>
 
           <label className="block">
-            <span className="text-sm text-gray-600">Oczekiwania finansowe</span>
+            <span className="text-sm text-gray-700 font-medium">Oczekiwania finansowe</span>
             <input
               type="text"
               placeholder="np. 15 000 PLN netto"
@@ -164,7 +164,7 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
           </label>
 
           <label className="block">
-            <span className="text-sm text-gray-600">E-mail kontaktowy</span>
+            <span className="text-sm text-gray-700 font-medium">E-mail kontaktowy</span>
             <input
               type="email"
               placeholder="np. hr@firma.pl"
@@ -175,7 +175,7 @@ export default function CompanyEditModal({ company, onSubmit, onDelete, onClose,
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="text-sm text-gray-600">Notatki</span>
+            <span className="text-sm text-gray-700 font-medium">Notatki</span>
             <textarea
               rows={3}
               value={form.notes}
