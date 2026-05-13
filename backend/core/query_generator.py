@@ -41,7 +41,7 @@ Przykłady dobrych zapytań (wzoruj się na tej strukturze):
 - "wdrożenia LLM dla branży finansowej polska firma konsulting\""""
 
 
-async def generate_query(previous_queries: list[str]) -> str:
+async def generate_query(previous_queries: list[str], recent_found: list[str] | None = None) -> str:
     if previous_queries:
         previous_section = "Poprzednie zapytania (nie powtarzaj tych fraz):\n" + "\n".join(
             f"- {q}" for q in previous_queries
@@ -49,9 +49,17 @@ async def generate_query(previous_queries: list[str]) -> str:
     else:
         previous_section = "To jest pierwsze zapytanie w tej sesji."
 
+    if recent_found:
+        found_section = (
+            "\nOstatnie znalezione firmy — szukaj INNEJ kategorii, nie tych samych:\n"
+            + "\n".join(f"- {c}" for c in recent_found)
+        )
+    else:
+        found_section = ""
+
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"{previous_section}\n\nGeneruj nowe zapytanie:"),
+        HumanMessage(content=f"{previous_section}{found_section}\n\nGeneruj nowe zapytanie:"),
     ]
 
     response = await _model.ainvoke(messages)

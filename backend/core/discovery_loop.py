@@ -13,6 +13,21 @@ MAX_RESULTS = 5           # ile URLi Tavily zwraca na jedno zapytanie
 MAX_CONTENT_CHARS = 2_000 # twardy limit treści przed wysłaniem do Haiku
 
 _POLISH_CHARS = set("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ")
+
+# Domeny zawsze odrzucane bez wywoływania Haiku — social media, agregatory, gov
+_BLOCKED_DOMAINS = frozenset({
+    "facebook.com", "youtube.com", "linkedin.com", "twitter.com", "x.com",
+    "instagram.com", "tiktok.com", "wikipedia.org", "wikipedia.pl",
+    "pracuj.pl", "olx.pl", "indeed.com", "nofluffjobs.com", "justjoin.it",
+    "github.com", "stackoverflow.com", "reddit.com",
+    "allegro.pl", "ceneo.pl",
+})
+
+
+def _is_blocked(domain: str) -> bool:
+    return domain in _BLOCKED_DOMAINS or ".gov.pl" in domain
+
+
 _ARTICLE_PATH_PATTERNS = (
     "/blog/", "/news/", "/artykul", "/artykuł", "/ranking",
     "/top-", "/lista-", "/wpis/", "/post/", "/wiedza/", "/porady/",
@@ -60,8 +75,10 @@ def _is_likely_article_snippet(snippet: str) -> bool:
     return any(sig in lower for sig in _ARTICLE_SNIPPET_SIGNALS)
 
 _tavily: AsyncTavilyClient | None = None
-_query_history: list[str] = []  # rolling window — persists across requests within process lifetime
+_query_history: list[str] = []          # rolling window zapytań — persists across requests
+_recent_found_categories: list[str] = [] # rolling window znalezionych kategorii firm
 QUERY_HISTORY_MAX = 10
+RECENT_FOUND_MAX = 5
 
 
 def _get_tavily() -> AsyncTavilyClient:
@@ -103,7 +120,7 @@ async def _extract_content(tavily: AsyncTavilyClient, url: str, snippet: str) ->
 
 
 async def find_company() -> dict | None:
-    global _query_history
+    global _query_history, _recent_found_categories
     try:
         async with asyncio.timeout(45):  # zwiększone z 25 — Extract usunięty, ale 3 próby z Haiku mogą zająć 30s
             # Krok 0: czy jest firma z niepodjętą decyzją z ostatnich 24h?
@@ -119,8 +136,10 @@ async def find_company() -> dict | None:
             previous_queries: list[str] = list(_query_history)
 
             for attempt in range(MAX_ATTEMPTS):
-                # Krok 1: Haiku generuje zapytanie (zna poprzednie żeby się nie powtarzać)
-                query = await call_with_retry(lambda: generate_query(previous_queries))
+                # Krok 1: Haiku generuje zapytanie — zna poprzednie zapytania i ostatnio znalezione kategorie
+                query = await call_with_retry(
+                    lambda rc=list(_recent_found_categories): generate_query(previous_queries, rc)
+                )
                 print(f"[QUERY #{attempt+1}] {query}")
                 previous_queries.append(query)
                 _query_history.append(query)
@@ -147,6 +166,10 @@ async def find_company() -> dict | None:
                 for domain, url, result in candidates:
                     if domain in seen:
                         print(f"[SKIP:seen]    {domain}")
+                        continue
+
+                    if _is_blocked(domain):
+                        print(f"[SKIP:blocked] {domain}")
                         continue
 
                     # Krok 3.5: heurystyczny pre-filter — zero tokenów
@@ -195,6 +218,10 @@ async def find_company() -> dict | None:
 
                     # Krok 6: zapisz do bazy i zwróć
                     print(f"[FOUND]        {domain} | {title} | {verification.what_they_do}")
+                    if verification.what_they_do:
+                        _recent_found_categories.append(verification.what_they_do)
+                        if len(_recent_found_categories) > RECENT_FOUND_MAX:
+                            _recent_found_categories.pop(0)
                     name = result.get("title", domain)
                     company = await save_company(
                         name=name,
