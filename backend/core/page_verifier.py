@@ -14,12 +14,13 @@ _model = ChatAnthropic(
     temperature=0.0,
 ).with_structured_output(PageVerification)
 
-SYSTEM_PROMPT = """Klasyfikujesz fragmenty stron internetowych. Odpowiedz tylko polami JSON.
+SYSTEM_PROMPT = """Oceniasz fragment strony internetowej pod kątem dwóch pytań.
 
-is_polish: TAK jeśli polska firma (treść po polsku LUB domena .pl). Oddziały zagranicznych korporacji = NIE.
+is_polish: Czy to firma działająca na polskim rynku? Oceń z kontekstu — język, lokalizacja, do kogo adresuje ofertę. Oddział zagranicznej korporacji w Polsce to NIE.
 
-is_ai_company: TAK jeśli firma ŚWIADCZY usługi AI lub buduje produkty AI dla klientów (chatboty, agenci, RAG, automatyzacje LLM, wdrożenia AI, własny SaaS AI, software house z ofertą AI).
-NIE jeśli: artykuł / ranking / katalog firm / firma tylko używa AI wewnętrznie / jedno narzędzie SaaS dla wąskiej niszy bez opisanego zespołu."""
+is_ai_company: Czy ta firma aktywnie tworzy lub wdraża rozwiązania AI dla swoich klientów? Tak rozumiane jako: buduje produkty AI, wdraża je u klientów, doradza w AI — czyli AI jest częścią jej oferty handlowej. NIE jeśli to artykuł, katalog firm, portal, lub firma która tylko wewnętrznie korzysta z AI.
+
+Gdy kontekst jest niejednoznaczny — zwróć False."""
 
 
 async def verify_page(content: str) -> PageVerification:
