@@ -10,37 +10,24 @@ _model = ChatAnthropic(
     temperature=0.9,
 )
 
-SYSTEM_PROMPT = """Generujesz zapytania do wyszukiwarki, które trafiają bezpośrednio w strony firmowe polskich firm AI — nie w artykuły, rankingi ani portale.
+SYSTEM_PROMPT = """Generujesz zapytania do wyszukiwarki żeby znaleźć strony główne polskich firm zajmujących się sztuczną inteligencją.
 
-Cel: znaleźć stronę główną lub stronę ofertową konkretnej polskiej firmy która wdraża lub sprzedaje rozwiązania AI.
+Wyobraź sobie że szukasz firmy AI w Polsce do której możesz wysłać CV. Chcesz trafić na stronę główną takiej firmy — nie na artykuł, ranking ani portal z listą firm.
 
-Typy firm których szukasz:
-- chatboty i voiceboty dla biznesu
-- agenci AI i automatyzacje LLM
-- RAG i systemy wyszukiwania w dokumentach
-- konsulting i wdrożenia AI
-- software house z ofertą AI
-- własne produkty SaaS oparte o AI
+Eksploruj szeroko: różne branże (fintech, medtech, legaltech, HR, e-commerce, produkcja, logistyka, edukacja, marketing, budownictwo, ubezpieczenia, retail), różne typy firm (startup, software house, agencja, consulting, product company), różne rodzaje rozwiązań AI (chatboty, agenci, RAG, automatyzacje, analityka, computer vision, NLP).
 
-Wymiary do rotowania (zmieniaj każde zapytanie):
-- Branże: fintech, medtech, legaltech, HR, e-commerce, produkcja, logistyka, edukacja, marketing, nieruchomości, ubezpieczenia
-- Typ: startup, software house, agencja, product company, consulting
+Każde zapytanie inne niż poprzednie — inna kombinacja branży i rodzaju AI.
+Zwróć tylko zapytanie, bez wyjaśnień.
 
-Zasady budowania zapytań:
-- Zapytanie musi prowadzić do strony FIRMY, nie artykułu — dodaj słowa obecne na stronach firmowych: "oferta", "wdrożenia", "dla firm", "kontakt", "usługi"
-- Firma musi być POLSKA — dodaj "Polska", "polska firma" lub użyj domeny .pl w zapytaniu
-- Każde zapytanie inne niż poprzednie — inna branża, inny typ usługi
-- Zwróć TYLKO zapytanie, bez cudzysłowów i wyjaśnień
-
-Przykłady (struktura: usługa AI + branża + sygnał firmowy + Polska):
-- agenci AI automatyzacja logistyki oferta polska firma
-- wdrożenia RAG dokumenty prawne system dla kancelarii Polska
-- voicebot obsługa klienta call center platforma dla firm site:.pl
-- AI analityka predykcyjna fintech startup Polska usługi
-- chatbot e-commerce personalizacja rekomendacje wdrożenia Polska
-- NLP przetwarzanie dokumentów medycznych polska firma kontakt
-- automatyzacja procesów HR rekrutacja AI rozwiązania dla firm
-- LLM integracje ERP produkcja polska firma oferta wdrożenia\""""
+Przykłady naturalnych zapytań które trafiają w strony firmowe:
+- polska firma AI automatyzacja procesów finansowych
+- chatbot dla branży medycznej wdrożenia Polska
+- agenci AI software house Warszawa
+- RAG analiza dokumentów prawnych polska firma
+- computer vision kontrola jakości produkcja Polska
+- NLP przetwarzanie faktur automatyzacja polska firma
+- AI consulting wdrożenia dla ubezpieczycieli Polska
+- startup machine learning rekomendacje e-commerce\""""
 
 
 async def generate_query(previous_queries: list[str]) -> str:
