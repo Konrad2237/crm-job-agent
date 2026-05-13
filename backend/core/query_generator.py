@@ -10,35 +10,37 @@ _model = ChatAnthropic(
     temperature=0.9,
 )
 
-SYSTEM_PROMPT = """Generujesz zapytania do wyszukiwarki internetowej, żeby znajdować polskie firmy zajmujące się sztuczną inteligencją.
+SYSTEM_PROMPT = """Generujesz zapytania do wyszukiwarki, które trafiają bezpośrednio w strony firmowe polskich firm AI — nie w artykuły, rankingi ani portale.
 
-Szukaj firm które oferują:
-- chatboty i wirtualnych asystentów dla biznesu
-- agentów AI i automatyzacje procesów oparte na LLM
-- rozwiązania RAG (retrieval-augmented generation)
-- generatywne AI w produktach B2B lub B2C
+Cel: znaleźć stronę główną lub stronę ofertową konkretnej polskiej firmy która wdraża lub sprzedaje rozwiązania AI.
+
+Typy firm których szukasz:
+- chatboty i voiceboty dla biznesu
+- agenci AI i automatyzacje LLM
+- RAG i systemy wyszukiwania w dokumentach
 - konsulting i wdrożenia AI
-- firmy IT/tech z obszarem AI jako jedną z usług
+- software house z ofertą AI
+- własne produkty SaaS oparte o AI
 
-Rotuj po tych wymiarach żeby eksplorować różne obszary:
-- Branże: fintech, medtech, legaltech, HR tech, e-commerce, produkcja, logistyka, edukacja, marketing, nieruchomości
-- Typ firmy: startup, software house, consulting AI, product company, agencja AI
+Wymiary do rotowania (zmieniaj każde zapytanie):
+- Branże: fintech, medtech, legaltech, HR, e-commerce, produkcja, logistyka, edukacja, marketing, nieruchomości, ubezpieczenia
+- Typ: startup, software house, agencja, product company, consulting
 
-Zasady:
-- Firmy muszą być POLSKIE (siedziba w Polsce, strona po polsku, domena .pl)
-- Każde zapytanie INNE niż poprzednie — zmieniaj kombinację branży, typu firmy i oferowanej usługi
-- KAŻDE zapytanie musi zawierać przynajmniej jedno słowo ze zbioru: "oferta", "usługi", "wdrożenia", "rozwiązania", "dla firm", "platforma", "system" — dzięki temu wyszukiwarka znajdzie strony firmowe, nie artykuły
-- Zwróć TYLKO treść zapytania, żadnych wyjaśnień ani cudzysłowów
+Zasady budowania zapytań:
+- Zapytanie musi prowadzić do strony FIRMY, nie artykułu — dodaj słowa obecne na stronach firmowych: "oferta", "wdrożenia", "dla firm", "kontakt", "usługi"
+- Firma musi być POLSKA — dodaj "Polska", "polska firma" lub użyj domeny .pl w zapytaniu
+- Każde zapytanie inne niż poprzednie — inna branża, inny typ usługi
+- Zwróć TYLKO zapytanie, bez cudzysłowów i wyjaśnień
 
-Przykłady dobrych zapytań (wzoruj się na tej strukturze):
-- "agenci AI automatyzacja procesów biznesowych polska firma oferta"
-- "chatbot AI obsługa klienta wdrożenia dla e-commerce Polska"
-- "platforma AI analityka medyczna Polska usługi"
-- "RAG system wyszukiwania dokumentów prawnych polska firma"
-- "voicebot AI call center wdrożenia dla firm"
-- "AI software house NLP machine learning projekty polska"
-- "automatyzacja HR rekrutacja AI rozwiązania dla firm Polska"
-- "wdrożenia LLM dla branży finansowej polska firma konsulting\""""
+Przykłady (struktura: usługa AI + branża + sygnał firmowy + Polska):
+- agenci AI automatyzacja logistyki oferta polska firma
+- wdrożenia RAG dokumenty prawne system dla kancelarii Polska
+- voicebot obsługa klienta call center platforma dla firm site:.pl
+- AI analityka predykcyjna fintech startup Polska usługi
+- chatbot e-commerce personalizacja rekomendacje wdrożenia Polska
+- NLP przetwarzanie dokumentów medycznych polska firma kontakt
+- automatyzacja procesów HR rekrutacja AI rozwiązania dla firm
+- LLM integracje ERP produkcja polska firma oferta wdrożenia\""""
 
 
 async def generate_query(previous_queries: list[str], recent_found: list[str] | None = None) -> str:

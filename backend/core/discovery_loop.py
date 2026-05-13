@@ -10,7 +10,7 @@ from core.query_generator import generate_query
 from core.page_verifier import verify_page
 
 MAX_ATTEMPTS = 3          # ile razy generujemy nowe zapytanie Tavily
-MAX_RESULTS = 5           # ile URLi Tavily zwraca na jedno zapytanie
+MAX_RESULTS = 3           # mniej URLi = mniej Haiku calls; lepsze zapytanie > więcej wyników
 MAX_CONTENT_CHARS = 2_000 # twardy limit treści przed wysłaniem do Haiku
 
 _POLISH_CHARS = set("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ")
@@ -151,9 +151,14 @@ async def find_company() -> dict | None:
                 if len(_query_history) > QUERY_HISTORY_MAX:
                     _query_history.pop(0)
 
-                # Krok 2: Tavily szuka — zwraca max 5 URLi z tytułami i snippetami
+                # Krok 2: Tavily szuka — exclude_domains działa po stronie Tavily,
+                # więc social media i portale pracy nie wracają wcale (zero tokenów)
                 search_resp = await call_with_retry(
-                    lambda q=query: tavily.search(q, max_results=MAX_RESULTS)
+                    lambda q=query: tavily.search(
+                        q,
+                        max_results=MAX_RESULTS,
+                        exclude_domains=list(_BLOCKED_DOMAINS),
+                    )
                 )
 
                 # Krok 3: normalizacja domen + batch dedup — 1 zapytanie zamiast 5
