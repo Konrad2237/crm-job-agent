@@ -80,10 +80,8 @@ def _is_likely_article_snippet(snippet: str) -> bool:
     return any(sig in lower for sig in _ARTICLE_SNIPPET_SIGNALS)
 
 _tavily: AsyncTavilyClient | None = None
-_query_history: list[str] = []          # rolling window zapytań — persists across requests
-_recent_found_categories: list[str] = [] # rolling window znalezionych kategorii firm
+_query_history: list[str] = []  # rolling window zapytań — persists across requests
 QUERY_HISTORY_MAX = 10
-RECENT_FOUND_MAX = 5
 
 
 def _get_tavily() -> AsyncTavilyClient:
@@ -124,8 +122,18 @@ async def _extract_content(tavily: AsyncTavilyClient, url: str, snippet: str) ->
     return content[:MAX_CONTENT_CHARS]
 
 
+def _name_from_title(title: str, domain: str) -> str:
+    for sep in (" - ", " | ", " – "):
+        parts = title.split(sep)
+        if len(parts) > 1:
+            candidate = parts[-1].strip()
+            if 2 < len(candidate) < 50:
+                return candidate
+    return domain
+
+
 async def find_company() -> dict | None:
-    global _query_history, _recent_found_categories
+    global _query_history
     try:
         async with asyncio.timeout(45):  # zwiększone z 25 — Extract usunięty, ale 3 próby z Haiku mogą zająć 30s
             # Krok 0: czy jest firma z niepodjętą decyzją z ostatnich 24h?
@@ -141,9 +149,9 @@ async def find_company() -> dict | None:
             previous_queries: list[str] = list(_query_history)
 
             for attempt in range(MAX_ATTEMPTS):
-                # Krok 1: Haiku generuje zapytanie — zna poprzednie zapytania i ostatnio znalezione kategorie
+                # Krok 1: Haiku generuje zapytanie — zna poprzednie żeby się nie powtarzać
                 query = await call_with_retry(
-                    lambda rc=list(_recent_found_categories): generate_query(previous_queries, rc)
+                    lambda: generate_query(previous_queries)
                 )
                 print(f"[QUERY #{attempt+1}] {query}")
                 previous_queries.append(query)
@@ -227,18 +235,14 @@ async def find_company() -> dict | None:
                         continue
 
                     # Krok 6: zapisz do bazy i zwróć
-                    name = verification.company_name or domain
+                    name = _name_from_title(title, domain)
                     homepage_url = f"https://{domain}"
-                    print(f"[FOUND]        {domain} | {name} | {verification.what_they_do}")
-                    if verification.what_they_do:
-                        _recent_found_categories.append(verification.what_they_do)
-                        if len(_recent_found_categories) > RECENT_FOUND_MAX:
-                            _recent_found_categories.pop(0)
+                    print(f"[FOUND]        {domain} | {name}")
                     company = await save_company(
                         name=name,
                         url=homepage_url,
                         domain=domain,
-                        what_they_do=verification.what_they_do,
+                        what_they_do="",
                     )
                     return company
 

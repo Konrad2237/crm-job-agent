@@ -6,38 +6,20 @@ from pydantic import BaseModel
 class PageVerification(BaseModel):
     is_polish: bool
     is_ai_company: bool
-    company_name: str = ""  # pusty gdy którekolwiek kryterium False
-    what_they_do: str = ""  # pusty gdy którekolwiek kryterium False
 
 
-# thinking wymaga temperature=1 i max_tokens > budget_tokens + output
-# budget_tokens=1024 (minimum) — wystarczy na proste rozumowanie klasyfikacyjne
 _model = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
-    max_tokens=2000,
-    temperature=1,
-    thinking={"type": "enabled", "budget_tokens": 1024},
+    max_tokens=50,
+    temperature=0.0,
 ).with_structured_output(PageVerification)
 
-SYSTEM_PROMPT = """Klasyfikujesz fragmenty stron internetowych.
+SYSTEM_PROMPT = """Klasyfikujesz fragmenty stron internetowych. Odpowiedz tylko polami JSON.
 
-Kryterium 1 — is_polish: czy to polska firma?
-- Treść głównie po polsku LUB siedziba w Polsce LUB domena .pl
-- Oddziały zagranicznych korporacji w Polsce = NIE
+is_polish: TAK jeśli polska firma (treść po polsku LUB domena .pl). Oddziały zagranicznych korporacji = NIE.
 
-Kryterium 2 — is_ai_company: czy to strona FIRMY która ŚWIADCZY usługi AI lub buduje produkty AI jako organizacja z zespołem?
-- TAK: chatboty, voiceboty, agenci AI, automatyzacje LLM, RAG, wdrożenia AI, AI consulting, własny produkt SaaS oparty o AI, software house z ofertą AI — nawet jeśli firma oferuje też szkolenia lub warsztaty jako usługę dodatkową
-- NIE — każde z poniższych dyskwalifikuje:
-  • artykuł, blog, news, ranking, zestawienie lub lista firm (nawet jeśli wymienia firmy AI)
-  • katalog firm, portal porównawczy, agregator, marketplace
-  • firma tylko wspomina AI bez konkretnej oferty usług
-  • firma WYŁĄCZNIE sprzedaje kursy lub szkolenia z AI, bez żadnych wdrożeń
-  • e-commerce lub marketing który "używa AI" ale nie sprzedaje AI jako usługi
-  • strona prezentuje JEDNO gotowe narzędzie SaaS dla wąskiej grupy zawodowej (prawnicy, lekarze, księgowi, HR) bez widocznego opisu firmy, zespołu ani oferty usług wdrożeniowych — to produkt, nie firma
-  • subdomena aplikacji lub panel demo (app.*, try.*, demo.*) bez kontekstu firmowego
-
-company_name: oficjalna nazwa firmy (1–4 słowa, np. "3Soft", "Fundacja AI", "Quarticon") — tylko gdy oba kryteria TAK. Bez formy prawnej (Sp. z o.o., S.A.). Pusty string gdy NIE.
-what_they_do: jednozdaniowy opis (np. "chatboty dla e-commerce, integracje GPT-4") — tylko gdy oba kryteria TAK. W przeciwnym razie pusty string."""
+is_ai_company: TAK jeśli firma ŚWIADCZY usługi AI lub buduje produkty AI dla klientów (chatboty, agenci, RAG, automatyzacje LLM, wdrożenia AI, własny SaaS AI, software house z ofertą AI).
+NIE jeśli: artykuł / ranking / katalog firm / firma tylko używa AI wewnętrznie / jedno narzędzie SaaS dla wąskiej niszy bez opisanego zespołu."""
 
 
 async def verify_page(content: str) -> PageVerification:
