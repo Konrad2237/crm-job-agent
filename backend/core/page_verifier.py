@@ -10,11 +10,13 @@ class PageVerification(BaseModel):
     what_they_do: str = ""  # pusty gdy którekolwiek kryterium False
 
 
-# temperature=0.0 — klasyfikacja wymaga determinizmu, nie kreatywności
+# thinking wymaga temperature=1 i max_tokens > budget_tokens + output
+# budget_tokens=1024 (minimum) — wystarczy na proste rozumowanie klasyfikacyjne
 _model = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
-    max_tokens=150,
-    temperature=0.0,
+    max_tokens=2000,
+    temperature=1,
+    thinking={"type": "enabled", "budget_tokens": 1024},
 ).with_structured_output(PageVerification)
 
 SYSTEM_PROMPT = """Klasyfikujesz fragmenty stron internetowych.
