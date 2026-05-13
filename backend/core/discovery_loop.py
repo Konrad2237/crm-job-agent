@@ -222,15 +222,16 @@ async def find_company() -> dict | None:
                         continue
 
                     # Krok 6: zapisz do bazy i zwróć
-                    print(f"[FOUND]        {domain} | {title} | {verification.what_they_do}")
+                    name = verification.company_name or domain
+                    homepage_url = f"https://{domain}"
+                    print(f"[FOUND]        {domain} | {name} | {verification.what_they_do}")
                     if verification.what_they_do:
                         _recent_found_categories.append(verification.what_they_do)
                         if len(_recent_found_categories) > RECENT_FOUND_MAX:
                             _recent_found_categories.pop(0)
-                    name = result.get("title", domain)
                     company = await save_company(
                         name=name,
-                        url=url,
+                        url=homepage_url,
                         domain=domain,
                         what_they_do=verification.what_they_do,
                     )
