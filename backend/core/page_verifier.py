@@ -12,7 +12,7 @@ class PageVerification(BaseModel):
 # temperature=0.0 — klasyfikacja wymaga determinizmu, nie kreatywności
 _model = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
-    max_tokens=100,
+    max_tokens=150,
     temperature=0.0,
 ).with_structured_output(PageVerification)
 
