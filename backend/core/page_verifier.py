@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class PageVerification(BaseModel):
     is_polish: bool
     is_ai_company: bool
+    company_name: str = ""  # pusty gdy którekolwiek kryterium False
     what_they_do: str = ""  # pusty gdy którekolwiek kryterium False
 
 
@@ -33,6 +34,7 @@ Kryterium 2 — is_ai_company: czy to strona FIRMY która ŚWIADCZY usługi AI l
   • strona prezentuje JEDNO gotowe narzędzie SaaS dla wąskiej grupy zawodowej (prawnicy, lekarze, księgowi, HR) bez widocznego opisu firmy, zespołu ani oferty usług wdrożeniowych — to produkt, nie firma
   • subdomena aplikacji lub panel demo (app.*, try.*, demo.*) bez kontekstu firmowego
 
+company_name: oficjalna nazwa firmy (1–4 słowa, np. "3Soft", "Fundacja AI", "Quarticon") — tylko gdy oba kryteria TAK. Bez formy prawnej (Sp. z o.o., S.A.). Pusty string gdy NIE.
 what_they_do: jednozdaniowy opis (np. "chatboty dla e-commerce, integracje GPT-4") — tylko gdy oba kryteria TAK. W przeciwnym razie pusty string."""
 
 
