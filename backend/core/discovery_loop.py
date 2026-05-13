@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 from urllib.parse import urlparse
 from fastapi import HTTPException
 from tavily import AsyncTavilyClient
@@ -32,6 +33,9 @@ _ARTICLE_PATH_PATTERNS = (
     "/blog/", "/news/", "/artykul", "/artykuł", "/ranking",
     "/top-", "/lista-", "/wpis/", "/post/", "/wiedza/", "/porady/",
 )
+# /2025/03/ lub /2026/02/ — klasyczny WordPress URL artykułu z datą
+_DATE_PATH_RE = re.compile(r"/20\d{2}/\d{1,2}/")
+
 # Sygnały artykułu w tytule wyniku — niezawodne, tytuły artykułów mają stałą strukturę
 _ARTICLE_TITLE_PATTERNS = (
     "ranking",
@@ -45,6 +49,7 @@ _ARTICLE_TITLE_PATTERNS = (
     "poradnik",
     "przewodnik",
     " firm ai",   # "15 firm AI...", "polskie firmy AI" itp.
+    "katalog ",   # "katalog LegalTech", "katalog firm AI" itp.
 )
 # Sygnały artykułu w snippecie — tylko te które NIGDY nie pojawiają się na stronie firmowej
 _ARTICLE_SNIPPET_SIGNALS = (
@@ -62,7 +67,7 @@ def _is_likely_polish(domain: str, text: str) -> bool:
 
 def _is_likely_article(url: str) -> bool:
     path = urlparse(url).path.lower()
-    return any(pat in path for pat in _ARTICLE_PATH_PATTERNS)
+    return any(pat in path for pat in _ARTICLE_PATH_PATTERNS) or bool(_DATE_PATH_RE.search(path))
 
 
 def _is_likely_article_title(title: str) -> bool:
