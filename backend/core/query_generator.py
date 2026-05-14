@@ -2,7 +2,7 @@ import random
 
 _TECHNOLOGIES = [
     "ML predykcja analityka",
-    "NLP analiza dokumentów tekstu",
+    "przetwarzanie języka naturalnego analiza tekstu",
     "computer vision inspekcja obrazów",
     "LLM asystent konwersacyjny",
     "automatyzacja procesów RPA",
