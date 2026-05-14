@@ -58,12 +58,12 @@ async def get_seen_domains(domains: list[str]) -> set[str]:
     return {row["domain"] for row in result.data}
 
 
-async def save_company(name: str, url: str, domain: str, what_they_do: str) -> dict:
+async def save_company(name: str, url: str, domain: str) -> dict:
     client = await _get_client()
     result = await safe_db_call(
         client.table("companies")
         .upsert(
-            {"name": name, "url": url, "domain": domain, "what_they_do": what_they_do},
+            {"name": name, "url": url, "domain": domain},
             on_conflict="domain",
             ignore_duplicates=True,
         )

@@ -10,7 +10,7 @@ class PageVerification(BaseModel):
 
 _model = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
-    max_tokens=50,
+    max_tokens=200,
     temperature=0.0,
 ).with_structured_output(PageVerification)
 
