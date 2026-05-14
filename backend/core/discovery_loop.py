@@ -11,7 +11,7 @@ from db.client import normalize_domain, get_seen_domains, save_company, save_ski
 from core.query_generator import generate_query
 from core.page_verifier import verify_page
 
-MAX_ATTEMPTS = 3
+MAX_ATTEMPTS = 1
 MAX_RESULTS = 5
 MAX_CONTENT_CHARS = 2_000
 
