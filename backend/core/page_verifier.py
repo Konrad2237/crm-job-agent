@@ -18,7 +18,7 @@ SYSTEM_PROMPT = """Oceniasz czy dana firma to polska firma AI.
 
 is_polish: Czy to polska firma lub firma działająca głównie na polskim rynku?
 TAK: polska siedziba, oferta po polsku, klienci w Polsce.
-NIE: globalny gigant (SAP, GFT, Randstad, HappyScribe), strona wyłącznie po angielsku bez związku z Polską.
+NIE: strona wyłącznie po angielsku, brak polskiego adresu/kontaktu, firma z zagraniczną centralą obsługująca globalny rynek.
 
 is_ai_company: Czy główna oferta tej firmy to sprzedaż lub wdrożenia technologii inteligentnych dla klientów?
 TAK — nawet bez słowa "AI" — jeśli firma oferuje: chatboty, agentów, systemy ML/NLP, computer vision, machine vision, automatyzację opartą na algorytmach, analizę predykcyjną, LLM, rozpoznawanie obrazu/mowy.
