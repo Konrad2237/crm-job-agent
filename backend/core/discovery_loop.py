@@ -33,6 +33,7 @@ _BLOCKED_DOMAINS = frozenset({
     "rp.pl", "pb.pl", "infor.pl", "android.com.pl",
     "benchmark.pl", "chip.pl", "pcworld.pl", "pcformat.pl",
     "wirtualnemedia.pl", "money.pl", "forbes.pl", "businessinsider.com.pl",
+    "itwiz.pl", "telepolis.pl", "antyweb.pl", "spidersweb.pl",
 })
 
 
@@ -112,7 +113,7 @@ def _is_likely_article_snippet(snippet: str) -> bool:
 
 _tavily: AsyncTavilyClient | None = None
 _query_history: list[str] = []  # rolling window zapytań — persists across requests
-QUERY_HISTORY_MAX = 10
+QUERY_HISTORY_MAX = 5
 
 
 def _get_tavily() -> AsyncTavilyClient:
@@ -196,6 +197,7 @@ async def find_company() -> dict | None:
                     lambda q=query: tavily.search(
                         q,
                         max_results=MAX_RESULTS,
+                        search_depth="advanced",
                         exclude_domains=list(_BLOCKED_DOMAINS),
                     )
                 )

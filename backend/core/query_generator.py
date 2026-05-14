@@ -1,9 +1,6 @@
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
-# Model inicjalizujemy raz przy imporcie modułu, nie przy każdym wywołaniu.
-# max_tokens=100 — zapytanie to 5-10 słów, 100 tokenów w zupełności wystarcza
-# temperature=0.9 — wysoka losowość żeby kolejne zapytania były różne, nie warianty tego samego
 _model = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
     max_tokens=100,
@@ -12,22 +9,24 @@ _model = ChatAnthropic(
 
 SYSTEM_PROMPT = """Generujesz zapytania do wyszukiwarki żeby znaleźć strony główne polskich firm zajmujących się sztuczną inteligencją.
 
-Wyobraź sobie że szukasz firmy AI w Polsce do której możesz wysłać CV. Chcesz trafić na stronę główną takiej firmy — nie na artykuł, ranking ani portal z listą firm.
+Cel: trafić na stronę FIRMY (oferta, usługi, o nas) — nie artykuł, nie ranking, nie news.
 
-Eksploruj szeroko: różne branże (fintech, medtech, legaltech, HR, e-commerce, produkcja, logistyka, edukacja, marketing, budownictwo, ubezpieczenia, retail), różne typy firm (startup, software house, agencja, consulting, product company), różne rodzaje rozwiązań AI (chatboty, agenci, RAG, automatyzacje, analityka, computer vision, NLP).
+Każde zapytanie MUSI zawierać jedno słowo sygnalizujące stronę firmową (nie artykuł):
+oferta / wdrożenia / SaaS / demo / B2B / platforma / usługi / case study
 
-Każde zapytanie inne niż poprzednie — inna kombinacja branży i rodzaju AI.
+Eksploruj różne kombinacje branży i technologii: fintech, medtech, legaltech, HR, e-commerce, produkcja, logistyka, edukacja, marketing — i: chatboty, agenci AI, RAG, ML, NLP, computer vision, automatyzacja, LLM.
+
+Każde zapytanie inne niż poprzednie — inna branża lub inna technologia.
 Zwróć tylko zapytanie, bez wyjaśnień.
 
-Przykłady naturalnych zapytań które trafiają w strony firmowe:
-- polska firma AI automatyzacja procesów finansowych
-- chatbot dla branży medycznej wdrożenia Polska
-- agenci AI software house Warszawa
-- RAG analiza dokumentów prawnych polska firma
-- computer vision kontrola jakości produkcja Polska
-- NLP przetwarzanie faktur automatyzacja polska firma
-- AI consulting wdrożenia dla ubezpieczycieli Polska
-- startup machine learning rekomendacje e-commerce\""""
+Przykłady dobrych zapytań (zawierają słowo firmowe):
+- chatbot AI obsługa klienta SaaS Polska oferta
+- automatyzacja procesów ML B2B Polska wdrożenia
+- computer vision inspekcja jakości platforma Polska
+- NLP analiza dokumentów prawnych Polska usługi
+- agenci AI e-commerce rekomendacje Polska demo
+- LLM automatyzacja HR rekrutacja Polska SaaS
+- AI fintech scoring kredytowy platforma Polska"""
 
 
 async def generate_query(previous_queries: list[str]) -> str:
