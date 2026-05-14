@@ -21,9 +21,9 @@ TAK: polska siedziba lub adres, polski zespół, oferta skierowana do polskich k
 NIE: międzynarodowe narzędzie SaaS z polską wersją językową (brak polskiego zespołu/adresu), globalna platforma dostępna w wielu krajach, firma z zagraniczną centralą.
 Sama polska wersja strony NIE wystarczy — liczy się polski zespół i polskie korzenie firmy.
 
-is_ai_company: Czy główna oferta tej firmy to sprzedaż lub wdrożenia AI dla klientów?
-TAK: firma której core biznes to chatboty, agenci AI, systemy ML, computer vision, automatyzacja AI, analiza predykcyjna, LLM — sprzedawane lub wdrażane u klientów.
-NIE: agencja marketingowa/SEO/PR/web która używa AI jako narzędzia pracy; software house bez specjalizacji AI; firma gdzie AI to jedna z wielu funkcji produktu; portal newsowy; artykuł; katalog firm; firma szkoleniowa."""
+is_ai_company: Czy firma sprzedaje lub wdraża AI jako produkt lub usługę dla klientów?
+TAK: chatboty, agenci AI, systemy ML, computer vision, automatyzacja AI, analiza predykcyjna, LLM — jako produkt lub usługa dla innych firm. Software house specjalizujący się w projektach AI.
+NIE: agencja marketingowa/SEO/PR/web która używa AI w swojej pracy ale sprzedaje usługi marketingowe; firma gdzie AI to drobna funkcja większego produktu; portal newsowy; artykuł; katalog firm."""
 
 
 async def verify_page(content: str, domain: str = "", title: str = "") -> PageVerification:
