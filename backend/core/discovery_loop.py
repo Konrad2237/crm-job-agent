@@ -49,9 +49,11 @@ _TITLE_NUMBER_START_RE = re.compile(r"^\d+[\s\-]")
 _ARTICLE_TITLE_PATTERNS = (
     "ranking", "top 10", "top 5", "top 15", "top 20",
     "lista firm", "zestawienie firm", "najlepsze firmy",
-    "jak wybrać", "jak działa", "co to jest",
-    "poradnik", "przewodnik",
+    "jak wybrać", "jak działa", "co to jest", "jak ",
+    "poradnik", "przewodnik", "czym jest", "co to",
     " firm ai", "katalog ", "companies in", "top ai", "sposobów", "zaskakując",
+    "zastosowanie w 202", "w 2025r", "w 2026r", "w 2024r",
+    "wprowadzenie do", "przegląd ", "omówienie",
 )
 _ARTICLE_SNIPPET_SIGNALS = (
     "w tym artykule",
@@ -134,12 +136,30 @@ def _name_from_title(title: str, domain: str) -> str:
         parts = [p.strip() for p in text.split(",")]
         return len(parts) >= 2 and all(p and p[0].isupper() for p in parts)
 
+    def _looks_like_name(text: str) -> bool:
+        # Odrzuca slogany i opisy: zaczyna się od czasownika lub przymiotnika opisowego
+        junk_starts = ("jak ", "co ", "czy ", "dlaczego ", "kiedy ", "gdzie ",
+                       "automatyzacja", "odzyskaj", "najlepsz", "kompleksow",
+                       "profesjonaln", "innowacyjn", "skuteczn")
+        lower = text.lower()
+        return not any(lower.startswith(j) for j in junk_starts)
+
+    # Próbuj ostatni człon po separatorze — standard PL: "Opis | Nazwa Firmy"
     for sep in (" | ", " – ", " - "):
         parts = title.split(sep)
         if len(parts) > 1:
             candidate = parts[-1].strip()
-            if 2 < len(candidate) < 45 and not _is_junk(candidate):
+            if 2 < len(candidate) < 45 and not _is_junk(candidate) and _looks_like_name(candidate):
                 return candidate
+
+    # Fallback: pierwszy człon przed separatorem jeśli krótki (często nazwa firmy)
+    for sep in (" | ", " – ", " - "):
+        parts = title.split(sep)
+        if len(parts) > 1:
+            candidate = parts[0].strip()
+            if 2 < len(candidate) < 35 and not _is_junk(candidate) and _looks_like_name(candidate):
+                return candidate
+
     return domain
 
 
