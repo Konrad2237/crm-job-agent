@@ -112,8 +112,6 @@ def _is_likely_article_snippet(snippet: str) -> bool:
     return any(sig in lower for sig in _ARTICLE_SNIPPET_SIGNALS)
 
 _tavily: AsyncTavilyClient | None = None
-_query_history: list[str] = []  # rolling window zapytań — persists across requests
-QUERY_HISTORY_MAX = 5
 
 
 def _get_tavily() -> AsyncTavilyClient:
@@ -171,7 +169,6 @@ def _name_from_title(title: str, domain: str) -> str:
 
 
 async def find_company() -> dict | None:
-    global _query_history
     try:
         async with asyncio.timeout(55):  # Extract homepage: +3-8s/kandydat; przy 3 próbach max ~50s
             # Krok 0: czy jest firma z niepodjętą decyzją z ostatnich 24h?
@@ -184,18 +181,12 @@ async def find_company() -> dict | None:
             await cleanup_stale_presented()
 
             tavily = _get_tavily()
-            previous_queries: list[str] = list(_query_history)
 
             for attempt in range(MAX_ATTEMPTS):
-                # Krok 1: Haiku generuje zapytanie — zna poprzednie żeby się nie powtarzać
-                query = await call_with_retry(
-                    lambda: generate_query(previous_queries)
-                )
+                # Krok 1: Haiku generuje zapytanie — temperature=0.9 zapewnia różnorodność
+                # bez potrzeby pamiętania historii; domeny z poprzednich wyszukań są blokowane przez dedup
+                query = await call_with_retry(lambda: generate_query())
                 print(f"[QUERY #{attempt+1}] {query}")
-                previous_queries.append(query)
-                _query_history.append(query)
-                if len(_query_history) > QUERY_HISTORY_MAX:
-                    _query_history.pop(0)
 
                 # Krok 2: Tavily szuka — exclude_domains działa po stronie Tavily,
                 # więc social media i portale pracy nie wracają wcale (zero tokenów)
