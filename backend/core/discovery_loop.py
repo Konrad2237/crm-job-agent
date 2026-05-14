@@ -150,7 +150,7 @@ def _name_from_title(title: str, domain: str) -> str:
 async def find_company() -> dict | None:
     global _query_history
     try:
-        async with asyncio.timeout(45):  # zwiększone z 25 — Extract usunięty, ale 3 próby z Haiku mogą zająć 30s
+        async with asyncio.timeout(55):  # Extract homepage: +3-8s/kandydat; przy 3 próbach max ~50s
             # Krok 0: czy jest firma z niepodjętą decyzją z ostatnich 24h?
             # Scenariusz: użytkownik zamknął przeglądarkę przed kliknięciem Pomiń/Aplikuj.
             pending = await get_recent_presented()
@@ -226,14 +226,11 @@ async def find_company() -> dict | None:
                         print(f"[SKIP:snippet] {domain} | {title}")
                         continue
 
-                    # Krok 4: snippet jako treść do klasyfikacji — pomijamy Tavily Extract
-                    # Snippet (200-500 znaków) wystarczy Haiku do oceny czy to firma AI.
-                    # Extract dodawał 2-5 sek latencji i 1500+ tokenów input — usunięty.
-                    # Fallback na Extract tylko gdy snippet jest ekstremalnie krótki.
-                    if len(snippet) >= 80:
-                        content = snippet[:MAX_CONTENT_CHARS]
-                    else:
-                        content = await _extract_content(tavily, url, snippet)
+                    # Krok 4: pobierz stronę główną firmy przez Tavily Extract.
+                    # Zawsze extractujemy homepage (https://domain), nie URL artykułu z wyników.
+                    # Firma AI rzadko ma "AI" w nazwie — weryfikacja wymaga treści strony głównej.
+                    # Snippet z wyników (200-500 znaków) to za mało i trafia w artykuły, nie opisy usług.
+                    content = await _extract_content(tavily, f"https://{domain}", snippet)
 
                     if len(content) < 50:
                         print(f"[SKIP:no-content] {domain} | {title}")
