@@ -238,12 +238,7 @@ async def find_company() -> dict | None:
                     name = _name_from_title(title, domain)
                     homepage_url = f"https://{domain}"
                     print(f"[FOUND]        {domain} | {name}")
-                    company = await save_company(
-                        name=name,
-                        url=homepage_url,
-                        domain=domain,
-                        what_they_do="",
-                    )
+                    company = await save_company(name=name, url=homepage_url, domain=domain)
                     return company
 
             return None  # po 3 próbach nic nie znaleziono
