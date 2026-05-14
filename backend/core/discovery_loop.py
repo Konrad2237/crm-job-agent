@@ -28,6 +28,12 @@ _BLOCKED_DOMAINS = frozenset({
     "benchmark.pl", "chip.pl", "pcworld.pl", "pcformat.pl",
     "wirtualnemedia.pl", "money.pl", "forbes.pl", "businessinsider.com.pl",
     "itwiz.pl", "telepolis.pl", "antyweb.pl", "spidersweb.pl",
+    # Portale szkoleniowe — dają kursy, nie firmy AI
+    "nobleprog.pl", "sages.pl", "dataworkshop.eu",
+    # Portale HR/news — nie firmy AI
+    "pulshr.pl", "marketingonline.pl",
+    # Platformy akademickie
+    "issuu.com", "researchgate.net", "academia.edu",
 })
 
 
@@ -61,6 +67,20 @@ _ARTICLE_SNIPPET_SIGNALS = (
     "redakcja:",
 )
 
+# Minimum: snippet lub tytuł musi zawierać chociaż jeden sygnał AI.
+# Odrzuca agencje marketingowe, kancelarie, sklepy itp. zanim trafią do Haiku.
+_AI_SIGNALS = frozenset({
+    "ai", "sztuczna inteligencja", "sztucznej inteligencji",
+    "machine learning", "uczenie maszynowe",
+    "deep learning", "neural", "sieć neuronowa",
+    "nlp", "llm", "gpt", "rag",
+    "chatbot", "voicebot", "wirtualny asystent",
+    "computer vision", "rozpoznawanie obrazu",
+    "automatyzacja", "automatyczny", "algorytm",
+    "predykcja", "prognozowanie", "analityka",
+    "agenci", "agent ai", "robot",
+})
+
 
 def _is_likely_polish(domain: str, text: str) -> bool:
     if domain.endswith(".pl"):
@@ -90,6 +110,11 @@ def _is_likely_article_title(title: str) -> bool:
 def _is_likely_article_snippet(snippet: str) -> bool:
     lower = snippet.lower()
     return any(sig in lower for sig in _ARTICLE_SNIPPET_SIGNALS)
+
+
+def _has_ai_signal(snippet: str, title: str) -> bool:
+    combined = (snippet + " " + title).lower()
+    return any(sig in combined for sig in _AI_SIGNALS)
 
 
 def _search_serpapi(query: str) -> list[dict]:
@@ -220,6 +245,10 @@ async def find_company() -> dict | None:
                         continue
                     if _is_likely_article_snippet(snippet):
                         print(f"[SKIP:snippet] {domain} | {title}")
+                        continue
+
+                    if not _has_ai_signal(snippet, title):
+                        print(f"[SKIP:no-ai]   {domain} | {title}")
                         continue
 
                     # Snippet Google jest wystarczający do klasyfikacji dla większości firm.
