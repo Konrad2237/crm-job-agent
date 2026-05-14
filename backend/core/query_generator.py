@@ -20,13 +20,13 @@ Każde zapytanie inne niż poprzednie — inna branża lub inna technologia.
 Zwróć tylko zapytanie, bez wyjaśnień.
 
 Przykłady dobrych zapytań (zawierają słowo firmowe):
-- chatbot AI obsługa klienta SaaS Polska oferta
-- automatyzacja procesów ML B2B Polska wdrożenia
-- computer vision inspekcja jakości platforma Polska
-- NLP analiza dokumentów prawnych Polska usługi
-- agenci AI e-commerce rekomendacje Polska demo
-- LLM automatyzacja HR rekrutacja Polska SaaS
-- AI fintech scoring kredytowy platforma Polska"""
+- ML platforma predykcyjna fintech scoring Polska SaaS
+- computer vision inspekcja jakości produkcja platforma Polska
+- NLP analiza dokumentów prawnych Polska usługi wdrożenia
+- agenci AI automatyzacja e-commerce rekomendacje Polska demo
+- AI automatyzacja produkcji optymalizacja procesów Polska B2B
+- LLM chatbot obsługa klienta Polska SaaS oferta
+- AI healthcare diagnostyka obrazowa wdrożenia Polska platforma"""
 
 
 async def generate_query(previous_queries: list[str]) -> str:

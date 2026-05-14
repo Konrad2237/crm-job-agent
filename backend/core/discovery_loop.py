@@ -155,11 +155,17 @@ async def _extract_content(tavily: AsyncTavilyClient, url: str, snippet: str) ->
 
 
 def _name_from_title(title: str, domain: str) -> str:
-    for sep in (" - ", " | ", " – "):
+    def _is_junk(text: str) -> bool:
+        # Odrzuca listy miast: "Gdańsk, Poznań, Warszawa" — wiele słów po przecinku, każde z dużej litery
+        parts = [p.strip() for p in text.split(",")]
+        return len(parts) >= 2 and all(p and p[0].isupper() for p in parts)
+
+    # Próbuj " | " najpierw — standardowy format PL: "Opis strony | Nazwa Firmy"
+    for sep in (" | ", " – ", " - "):
         parts = title.split(sep)
         if len(parts) > 1:
             candidate = parts[-1].strip()
-            if 2 < len(candidate) < 50:
+            if 2 < len(candidate) < 45 and not _is_junk(candidate):
                 return candidate
     return domain
 
