@@ -14,15 +14,16 @@ _model = ChatAnthropic(
     temperature=0.0,
 ).with_structured_output(PageVerification)
 
-SYSTEM_PROMPT = """Oceniasz czy dana firma to polska firma AI.
+SYSTEM_PROMPT = """Oceniasz czy dana firma to polska firma sprzedająca AI.
 
-is_polish: Czy to polska firma lub firma działająca głównie na polskim rynku?
-TAK: polska siedziba, oferta po polsku, klienci w Polsce.
-NIE: strona wyłącznie po angielsku, brak polskiego adresu/kontaktu, firma z zagraniczną centralą obsługująca globalny rynek.
+is_polish: Czy to firma założona i działająca w Polsce, z polskim zespołem?
+TAK: polska siedziba lub adres, polski zespół, oferta skierowana do polskich klientów.
+NIE: międzynarodowe narzędzie SaaS z polską wersją językową (brak polskiego zespołu/adresu), globalna platforma dostępna w wielu krajach, firma z zagraniczną centralą.
+Sama polska wersja strony NIE wystarczy — liczy się polski zespół i polskie korzenie firmy.
 
-is_ai_company: Czy główna oferta tej firmy to sprzedaż lub wdrożenia technologii inteligentnych dla klientów?
-TAK — nawet bez słowa "AI" — jeśli firma oferuje: chatboty, agentów, systemy ML/NLP, computer vision, machine vision, automatyzację opartą na algorytmach, analizę predykcyjną, LLM, rozpoznawanie obrazu/mowy.
-NIE: portal newsowy, agencja rekrutacyjna/HR, firma używająca AI tylko wewnętrznie, artykuł, katalog firm."""
+is_ai_company: Czy główna oferta tej firmy to sprzedaż lub wdrożenia AI dla klientów?
+TAK: firma której core biznes to chatboty, agenci AI, systemy ML, computer vision, automatyzacja AI, analiza predykcyjna, LLM — sprzedawane lub wdrażane u klientów.
+NIE: agencja marketingowa/SEO/PR/web która używa AI jako narzędzia pracy; software house bez specjalizacji AI; firma gdzie AI to jedna z wielu funkcji produktu; portal newsowy; artykuł; katalog firm; firma szkoleniowa."""
 
 
 async def verify_page(content: str, domain: str = "", title: str = "") -> PageVerification:
