@@ -87,7 +87,7 @@ crm-job-agent/
   ```
 - **Zawsze używaj `call_with_retry()`** dla wywołań Tavily i Anthropic API (retry 2×, delay 2 sek).
 - **Zawsze używaj `safe_db_call()`** dla wywołań Supabase (łapie wyjątki, zwraca 503).
-- **Zawsze używaj `asyncio.timeout(25)`** na całą funkcję `find_company()`.
+- **Zawsze używaj `asyncio.timeout(55)`** na całą funkcję `find_company()` — Extract homepage dodaje 3-8s/kandydat.
 - **INSERT zawsze z `ON CONFLICT (domain) DO NOTHING`** — nigdy czysty INSERT do tabeli `companies`.
 - **Brak komentarzy do oczywistego kodu.** Komentarz tylko gdy WHY jest nieoczywiste.
 - **Brak nadmiarowej obsługi błędów** dla sytuacji które nie mogą wystąpić.
@@ -126,6 +126,9 @@ crm-job-agent/
 | **Nie oceniamy dopasowania kandydata** | Agent tylko weryfikuje: polska strona + usługi AI. Ocena należy do użytkownika. |
 | **Nie szukamy ofert pracy ani wymagań** | Szukamy firm. Użytkownik sam ocenia czy aplikować. |
 | **Nie budujemy multi-user** | Jeden użytkownik, brak auth, brak izolacji danych między kontami. |
+| **Nie używamy historii zapytań w query_generator** | Historia blokowała dobre tematy — jeśli użytkownik zaaplikował do firmy HR AI, agent przestawał szukać w HR AI. Dedup domen (`get_seen_domains`) wystarczy do unikania powtórek. |
+| **Nie wpisujemy nazw konkretnych firm do promptów Haiku** | Hardkodowanie "SAP, GFT, Randstad" jako przykładów jest kruche — Accenture czy Capgemini nie byłyby blokowane. Prompty muszą opisywać CECHY (globalna korporacja, strona po angielsku), nie konkretne firmy. |
+| **Nie ustawiamy max_tokens < 200 dla page_verifier** | Structured output przez Anthropic tool_use ma ~80-100 tokenów overhead na nagłówek narzędzia. Przy 50 lub 100 tokenach Haiku urywa output po pierwszym polu (`is_polish`) i nigdy nie wypełnia `is_ai_company`. |
 
 ---
 
@@ -170,13 +173,25 @@ Po MWS — ukończone:
 - [x] Edycja i usuwanie firm z CRM
 - [x] Search + sort w CRM (backendowy, działa na całej bazie)
 - [x] Stats bar z licznikami statusów
-- [x] `what_they_do: str = ""` — fix ValidationError gdy Haiku pomija pole
-- [x] `is_company_page` w page_verifier — odrzuca listy rankingowe
-- [x] Rolling window 10 ostatnich zapytań — agent nie kręci się w kółko
 - [x] Domeny failujące `verify_page` zapisywane jako `skipped` — nie wracają w kolejnych sesjach
 - [x] `MAX_CONTENT_CHARS` 6000 → 2000 — ~66% mniej tokenów input dla page_verifier
 - [x] Batch dedup domen — 1 zapytanie DB per attempt zamiast 5
-- [x] `max_tokens` page_verifier 150 → 100
+
+Dzień 6 — naprawy discovery:
+- [x] `max_tokens` page_verifier: 50 → 200 (structured output wymaga min. ~150 tokenów)
+- [x] `what_they_do` usunięty z `save_company` i `page_verifier` — zawsze był pusty
+- [x] Portale newsowe (rp.pl, pb.pl, infor.pl, itwiz.pl…) dodane do `_BLOCKED_DOMAINS`
+- [x] `_is_blocked()` blokuje teraz subdomeny (cyfrowa.rp.pl gdy rp.pl na liście)
+- [x] Filtr tytułów zaczynających się od liczby (`_TITLE_NUMBER_START_RE`) — artykuły
+- [x] Filtr URLi kończących się `.pdf`
+- [x] `page_verifier` prompt: nie wymaga słowa "AI" — akceptuje ML, NLP, computer vision, automatyzację
+- [x] `verify_page()` dostaje domenę i tytuł jako dodatkowy kontekst
+- [x] `.pl` domeny → Extract homepage; non-`.pl` → snippet z Tavily
+- [x] `search_depth="advanced"` w Tavily — głębsze indeksowanie, lepsze wyniki dla małych firm
+- [x] `MAX_RESULTS` 3 → 5
+- [x] Historia zapytań (`_query_history`) usunięta — blokowała dobre tematy
+- [x] Zapytania Haiku muszą zawierać słowo firmowe (oferta/SaaS/demo/B2B/wdrożenia)
+- [x] `_name_from_title()` naprawiony — nie zwraca list miast jako nazwy firmy
 
 ---
 
