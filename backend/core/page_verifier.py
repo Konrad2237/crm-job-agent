@@ -14,18 +14,27 @@ _model = ChatAnthropic(
     temperature=0.0,
 ).with_structured_output(PageVerification)
 
-SYSTEM_PROMPT = """Oceniasz fragment strony internetowej pod kątem dwóch pytań.
+SYSTEM_PROMPT = """Oceniasz czy dana firma to polska firma AI.
 
-is_polish: Czy to firma działająca na polskim rynku? Oceń z kontekstu — język, lokalizacja, do kogo adresuje ofertę. Oddział zagranicznej korporacji w Polsce to NIE.
+is_polish: Czy to polska firma lub firma działająca głównie na polskim rynku?
+TAK: polska siedziba, oferta po polsku, klienci w Polsce.
+NIE: globalny gigant (SAP, GFT, Randstad, HappyScribe), strona wyłącznie po angielsku bez związku z Polską.
 
-is_ai_company: Czy ta firma aktywnie tworzy lub wdraża rozwiązania AI dla swoich klientów? Tak rozumiane jako: buduje produkty AI, wdraża je u klientów, doradza w AI — czyli AI jest częścią jej oferty handlowej. NIE jeśli to artykuł, katalog firm, portal, lub firma która tylko wewnętrznie korzysta z AI.
+is_ai_company: Czy główna oferta tej firmy to sprzedaż lub wdrożenia technologii inteligentnych dla klientów?
+TAK — nawet bez słowa "AI" — jeśli firma oferuje: chatboty, agentów, systemy ML/NLP, computer vision, machine vision, automatyzację opartą na algorytmach, analizę predykcyjną, LLM, rozpoznawanie obrazu/mowy.
+NIE: portal newsowy, agencja rekrutacyjna/HR, firma używająca AI tylko wewnętrznie, artykuł, katalog firm."""
 
-Gdy kontekst jest niejednoznaczny — zwróć False."""
 
+async def verify_page(content: str, domain: str = "", title: str = "") -> PageVerification:
+    header_parts = []
+    if domain:
+        header_parts.append(f"Domena: {domain}")
+    if title:
+        header_parts.append(f"Tytuł: {title}")
+    header = "\n".join(header_parts) + "\n\n" if header_parts else ""
 
-async def verify_page(content: str) -> PageVerification:
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Treść strony:\n\n{content}"),
+        HumanMessage(content=f"{header}Treść:\n\n{content}"),
     ]
     return await _model.ainvoke(messages)

@@ -10,23 +10,39 @@ from core.query_generator import generate_query
 from core.page_verifier import verify_page
 
 MAX_ATTEMPTS = 3          # ile razy generujemy nowe zapytanie Tavily
-MAX_RESULTS = 3           # mniej URLi = mniej Haiku calls; lepsze zapytanie > więcej wyników
+MAX_RESULTS = 5           # więcej kandydatów per zapytanie — lepsze pokrycie po filtrowaniu
 MAX_CONTENT_CHARS = 2_000 # twardy limit treści przed wysłaniem do Haiku
 
 _POLISH_CHARS = set("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ")
 
-# Domeny zawsze odrzucane bez wywoływania Haiku — social media, agregatory, gov
+# Domeny zawsze odrzucane — trafiają do Tavily exclude_domains (nie wracają wcale)
+# i są sprawdzane lokalnie. Subdomeny też są blokowane przez _is_blocked().
 _BLOCKED_DOMAINS = frozenset({
+    # Social media
     "facebook.com", "youtube.com", "linkedin.com", "twitter.com", "x.com",
-    "instagram.com", "tiktok.com", "wikipedia.org", "wikipedia.pl",
+    "instagram.com", "tiktok.com",
+    # Encyklopedie
+    "wikipedia.org", "wikipedia.pl",
+    # Portale pracy
     "pracuj.pl", "olx.pl", "indeed.com", "nofluffjobs.com", "justjoin.it",
+    # Dev / Q&A
     "github.com", "stackoverflow.com", "reddit.com",
+    # E-commerce
     "allegro.pl", "ceneo.pl",
+    # Portale newsowe i biznesowe — wracały jako wyniki dla zapytań o firmy AI
+    "rp.pl", "pb.pl", "infor.pl", "android.com.pl",
+    "benchmark.pl", "chip.pl", "pcworld.pl", "pcformat.pl",
+    "wirtualnemedia.pl", "money.pl", "forbes.pl", "businessinsider.com.pl",
 })
 
 
 def _is_blocked(domain: str) -> bool:
-    return domain in _BLOCKED_DOMAINS or ".gov.pl" in domain
+    if ".gov.pl" in domain:
+        return True
+    if domain in _BLOCKED_DOMAINS:
+        return True
+    # Blokuj też subdomeny zablokowanych domen (np. cyfrowa.rp.pl gdy rp.pl jest zablokowane)
+    return any(domain.endswith(f".{blocked}") for blocked in _BLOCKED_DOMAINS)
 
 
 _ARTICLE_PATH_PATTERNS = (
@@ -71,8 +87,8 @@ def _is_likely_polish(domain: str, text: str) -> bool:
     return any(c in _POLISH_CHARS for c in text)
 
 
-def _is_edu_or_news_domain(domain: str) -> bool:
-    return ".edu.pl" in domain or domain in {"pb.pl", "pulsbizneu.pl"}
+def _is_edu_domain(domain: str) -> bool:
+    return ".edu.pl" in domain
 
 
 def _is_likely_article(url: str) -> bool:
@@ -205,8 +221,8 @@ async def find_company() -> dict | None:
                         print(f"[SKIP:blocked] {domain}")
                         continue
 
-                    if _is_edu_or_news_domain(domain):
-                        print(f"[SKIP:edu/news] {domain}")
+                    if _is_edu_domain(domain):
+                        print(f"[SKIP:edu] {domain}")
                         continue
 
                     # Krok 3.5: heurystyczny pre-filter — zero tokenów
@@ -226,21 +242,26 @@ async def find_company() -> dict | None:
                         print(f"[SKIP:snippet] {domain} | {title}")
                         continue
 
-                    # Krok 4: pobierz stronę główną firmy przez Tavily Extract.
-                    # Zawsze extractujemy homepage (https://domain), nie URL artykułu z wyników.
-                    # Firma AI rzadko ma "AI" w nazwie — weryfikacja wymaga treści strony głównej.
-                    # Snippet z wyników (200-500 znaków) to za mało i trafia w artykuły, nie opisy usług.
-                    content = await _extract_content(tavily, f"https://{domain}", snippet)
+                    # Krok 4: pobierz treść do klasyfikacji.
+                    # .pl: Extract homepage — pełna treść strony, najdokładniejsze źródło.
+                    # non-.pl: snippet z Tavily (po polsku) — Extract dałby angielski homepage
+                    #   i Haiku fałszywie odrzuciłby polską firmę z domeną .com/.ai/.io.
+                    if domain.endswith(".pl"):
+                        content = await _extract_content(tavily, f"https://{domain}", snippet)
+                    else:
+                        content = snippet[:MAX_CONTENT_CHARS] if snippet else ""
 
                     if len(content) < 50:
                         print(f"[SKIP:no-content] {domain} | {title}")
                         continue
 
                     # Krok 5: Haiku klasyfikuje — polska firma AI?
-                    # retries=1 zamiast 2 — przy błędzie parsowania Haiku ponowienie rzadko pomaga
+                    # Przekazujemy domenę i tytuł jako dodatkowy kontekst obok treści.
                     print(f"[HAIKU]        {domain} | {title}")
                     try:
-                        verification = await call_with_retry(lambda c=content: verify_page(c), retries=1)
+                        verification = await call_with_retry(
+                            lambda c=content, d=domain, t=title: verify_page(c, d, t), retries=1
+                        )
                     except Exception:
                         await save_skipped_domain(result.get("title", domain), url, domain)
                         print(f"[SKIP:haiku-err] {domain}")
