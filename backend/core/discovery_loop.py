@@ -107,7 +107,7 @@ def _search_serpapi(query: str) -> list[dict]:
 
 async def _fetch_page_content(url: str, snippet: str) -> str:
     try:
-        async with httpx.AsyncClient(timeout=8, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=5, follow_redirects=True) as client:
             headers = {"User-Agent": "Mozilla/5.0 (compatible; CRMJobAgent/1.0)"}
             resp = await client.get(url, headers=headers)
             soup = BeautifulSoup(resp.text, "html.parser")
@@ -222,11 +222,12 @@ async def find_company() -> dict | None:
                         print(f"[SKIP:snippet] {domain} | {title}")
                         continue
 
-                    # Pobierz treść strony — httpx dla .pl, snippet dla pozostałych
-                    if domain.endswith(".pl"):
-                        content = await _fetch_page_content(f"https://{domain}", snippet)
+                    # Snippet Google jest wystarczający do klasyfikacji dla większości firm.
+                    # Fetch strony tylko gdy snippet za krótki — oszczędza 4-8s per kandydat.
+                    if len(snippet) >= 150:
+                        content = snippet[:MAX_CONTENT_CHARS]
                     else:
-                        content = snippet[:MAX_CONTENT_CHARS] if snippet else ""
+                        content = await _fetch_page_content(f"https://{domain}", snippet)
 
                     if len(content) < 50:
                         print(f"[SKIP:no-content] {domain} | {title}")
