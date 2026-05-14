@@ -35,6 +35,8 @@ _ARTICLE_PATH_PATTERNS = (
 )
 # /2025/03/ lub /2026/02/ — klasyczny WordPress URL artykułu z datą
 _DATE_PATH_RE = re.compile(r"/20\d{2}/\d{1,2}/")
+# "10 sposobów...", "100 Top AI Companies..." — artykuły zawsze zaczynają się od liczby
+_TITLE_NUMBER_START_RE = re.compile(r"^\d+[\s\-]")
 
 # Sygnały artykułu w tytule wyniku — niezawodne, tytuły artykułów mają stałą strukturę
 _ARTICLE_TITLE_PATTERNS = (
@@ -48,8 +50,12 @@ _ARTICLE_TITLE_PATTERNS = (
     "co to jest",
     "poradnik",
     "przewodnik",
-    " firm ai",   # "15 firm AI...", "polskie firmy AI" itp.
-    "katalog ",   # "katalog LegalTech", "katalog firm AI" itp.
+    " firm ai",      # "15 firm AI...", "polskie firmy AI" itp.
+    "katalog ",      # "katalog LegalTech", "katalog firm AI" itp.
+    "companies in",  # "Top AI Companies in Poland"
+    "top ai",        # "Top AI Companies..."
+    "sposobów",      # "10 sposobów jak AI..."
+    "zaskakując",    # "10 zaskakujących sposobów..."
 )
 # Sygnały artykułu w snippecie — tylko te które NIGDY nie pojawiają się na stronie firmowej
 _ARTICLE_SNIPPET_SIGNALS = (
@@ -65,12 +71,21 @@ def _is_likely_polish(domain: str, text: str) -> bool:
     return any(c in _POLISH_CHARS for c in text)
 
 
+def _is_edu_or_news_domain(domain: str) -> bool:
+    return ".edu.pl" in domain or domain in {"pb.pl", "pulsbizneu.pl"}
+
+
 def _is_likely_article(url: str) -> bool:
-    path = urlparse(url).path.lower()
+    parsed = urlparse(url)
+    path = parsed.path.lower()
+    if path.endswith(".pdf"):
+        return True
     return any(pat in path for pat in _ARTICLE_PATH_PATTERNS) or bool(_DATE_PATH_RE.search(path))
 
 
 def _is_likely_article_title(title: str) -> bool:
+    if _TITLE_NUMBER_START_RE.match(title):
+        return True
     lower = title.lower()
     return any(pat in lower for pat in _ARTICLE_TITLE_PATTERNS)
 
@@ -188,6 +203,10 @@ async def find_company() -> dict | None:
 
                     if _is_blocked(domain):
                         print(f"[SKIP:blocked] {domain}")
+                        continue
+
+                    if _is_edu_or_news_domain(domain):
+                        print(f"[SKIP:edu/news] {domain}")
                         continue
 
                     # Krok 3.5: heurystyczny pre-filter — zero tokenów
