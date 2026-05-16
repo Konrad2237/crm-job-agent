@@ -1,95 +1,231 @@
 # CRM Job Agent
 
-Narzędzie do znajdowania polskich firm AI i śledzenia aplikacji o pracę.
+**[→ Otwórz aplikację](https://crm-job-agent.vercel.app)**
 
-## Problem
+Narzędzie do automatycznego znajdowania polskich firm AI i śledzenia aplikacji o pracę.
 
-Ręczne szukanie firm przez ChatGPT daje złe linki, angielskie strony i ciągłe powtórki. Notatnik z firmami nie ma linków, dat, stanowisk ani statusów.
+Agent wyszukuje polskie firmy zajmujące się sztuczną inteligencją, prezentuje je jedną po drugiej i pozwala śledzić cały proces aplikowania — od pierwszego kontaktu po otrzymanie odpowiedzi. Eliminuje ręczne szukanie firm przez ChatGPT (złe linki, powtórki, brak kontekstu) i zastępuje chaotyczny notatnik CRM-em z datami, statusami i historią.
 
-## Jak działa
+---
 
-1. Klikasz **"Znajdź firmę"**
-2. Agent wyszukuje jedną polską firmę z obszaru AI, której jeszcze nie odwiedziłeś
-3. Otwierasz link, decydujesz czy aplikujesz
-4. Dane trafiają do CRM
-5. Agent automatycznie szuka kolejnej
+## Spis treści
 
-## Stack
+- [Funkcjonalności](#funkcjonalności)
+- [Wymagania](#wymagania)
+- [Instalacja](#instalacja)
+- [Użycie](#użycie)
+- [Struktura projektu](#struktura-projektu)
+- [Technologie](#technologie)
+- [Deployment](#deployment)
 
-| Warstwa | Technologia |
-|---|---|
-| Frontend | Next.js + Tailwind CSS → Vercel |
-| Backend | Python 3.12 + FastAPI → Railway |
-| Baza danych | PostgreSQL → Supabase |
-| LLM | Claude Haiku 4.5 (Anthropic) |
-| Wyszukiwanie | Tavily API |
-| LLM Framework | LangChain |
+---
 
-## Architektura
+## Funkcjonalności
 
-LLM robi **tylko dwie rzeczy**: generuje zapytanie wyszukiwania i klasyfikuje stronę (polska + AI?). Cała logika pętli jest w Pythonie — zero agentic loops, pełna kontrola nad tokenami.
+- **Automatyczne znajdowanie firm** — jeden klik, agent wyszukuje polską firmę AI której jeszcze nie odwiedziłeś
+- **Filtrowanie śmieci** — odrzuca artykuły, portale newsowe, firmy zagraniczne i agencje marketingowe zanim trafią do klasyfikacji LLM
+- **Weryfikacja przez Haiku** — Claude Haiku ocenia czy firma naprawdę jest polska i czy sprzedaje AI (nie tylko "używa AI wewnętrznie")
+- **Decyzje przy każdej firmie** — Pomiń lub Wysłałem CV, z możliwością zapisania stanowiska, widełek i emaila kontaktowego
+- **CRM Dashboard** — tabela wszystkich firm z filtrowaniem po statusie, wyszukiwaniem i sortowaniem
+- **Śledzenie odpowiedzi** — oznaczanie czy firma odpisała i z jakim wynikiem
+- **Ręczne dodawanie** — wpisz firmę z OLX/Pracuj.pl ręcznie do CRM
+- **Statystyki** — liczniki applied / skipped / presented / replied
 
+---
+
+## Wymagania
+
+- Python 3.12+
+- Node.js 18+
+- Konta i klucze API:
+  - [Anthropic](https://console.anthropic.com) — klucz do Claude Haiku
+  - [SerpAPI](https://serpapi.com) — klucz do wyszukiwania Google (250 zapytań/mies. za darmo = ~250 kliknięć "Znajdź firmę"; wystarczy na codzienny użytek)
+  - [Supabase](https://supabase.com) — projekt z bazą PostgreSQL (darmowy tier wystarczy)
+
+---
+
+## Instalacja
+
+### 1. Sklonuj repozytorium
+
+```bash
+git clone https://github.com/Konrad2237/crm-job-agent.git
+cd crm-job-agent
 ```
-POST /find
-  → generuj zapytanie (Haiku)
-  → szukaj w Tavily (max 5 wyników)
-  → dla każdego URL: sprawdź dedup → pobierz treść → klasyfikuj (Haiku)
-  → zapisz do DB i zwróć firmę
+
+### 2. Skonfiguruj zmienne środowiskowe
+
+```bash
+cp .env.example .env
 ```
+
+Uzupełnij `.env`:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+SERPAPI_KEY=...
+SUPABASE_URL=https://twoj-projekt.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=...
+API_SECRET=dowolny-losowy-string
+```
+
+### 3. Backend (FastAPI)
+
+```bash
+pip install -r requirements.txt
+cd backend
+uvicorn main:app --reload
+```
+
+Backend działa na `http://localhost:8000`.
+
+### 4. Frontend (Next.js)
+
+```bash
+cd frontend
+npm install
+```
+
+Utwórz `frontend/.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_SECRET=ten-sam-co-API_SECRET-w-backend
+```
+
+```bash
+npm run dev
+```
+
+Frontend działa na `http://localhost:3000`.
+
+### 5. Baza danych
+
+W Supabase wykonaj migrację:
+
+```sql
+CREATE TABLE companies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  url TEXT,
+  domain TEXT UNIQUE NOT NULL,
+  source TEXT DEFAULT 'agent',
+  status TEXT DEFAULT 'presented',
+  position TEXT,
+  salary_expectation TEXT,
+  contact_email TEXT,
+  notes TEXT,
+  reply_received BOOLEAN DEFAULT FALSE,
+  reply_status TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  applied_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Trigger aktualizujący updated_at przy każdym UPDATE
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER companies_updated_at
+BEFORE UPDATE ON companies
+FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+```
+
+---
+
+## Użycie
+
+### Znajdowanie firm
+
+1. Otwórz `http://localhost:3000`
+2. Kliknij **Znajdź firmę** — agent wyszukuje jedną polską firmę AI
+3. Przejrzyj firmę:
+   - **Pomiń** — firma nie pasuje; zostaje zapisana jako "widziana" i nie wróci w kolejnych wyszukaniach. Kliknij "Znajdź firmę" ponownie żeby szukać dalej.
+   - **Wysłałem CV** — otwiera formularz z polami na stanowisko, widełki, email, notatki. Po zapisaniu agent **automatycznie** szuka kolejnej firmy.
+
+> Jeśli agent nie znajdzie firmy spełniającej kryteria, wyświetli komunikat "Nie znaleziono". Kliknij "Znajdź firmę" ponownie — każde wyszukanie losuje inne zapytanie.
+
+### CRM Dashboard
+
+Wejdź w zakładkę **CRM** żeby zobaczyć wszystkie firmy z filtrowaniem po statusie (`applied`, `skipped`, `presented`) i wyszukiwarką po nazwie/domenie.
+
+---
 
 ## Struktura projektu
 
 ```
 crm-job-agent/
 ├── backend/
-│   ├── main.py                 # FastAPI app
+│   ├── main.py                  # FastAPI app, CORS, auth middleware
 │   ├── routers/
-│   │   ├── discovery.py        # POST /find, /skip, /apply
-│   │   └── companies.py        # GET /companies, POST /manual, PATCH /{id}
+│   │   ├── discovery.py         # POST /find, /skip, /apply
+│   │   └── companies.py         # GET /companies, PATCH, DELETE
 │   ├── core/
-│   │   ├── discovery_loop.py   # główna pętla (Python)
-│   │   ├── query_generator.py  # generowanie zapytań (Haiku)
-│   │   └── page_verifier.py    # klasyfikacja strony (Haiku)
+│   │   ├── discovery_loop.py    # główna pętla: SerpAPI → filtry → Haiku → DB
+│   │   ├── query_generator.py   # generuje zapytanie do SerpAPI (Python, bez LLM)
+│   │   └── page_verifier.py     # Haiku klasyfikuje stronę: polska firma AI?
 │   ├── db/
-│   │   └── client.py           # Supabase + zapytania SQL
+│   │   └── client.py            # Supabase client, wszystkie zapytania SQL
 │   └── models/
-│       └── schemas.py          # Pydantic modele
+│       └── schemas.py           # Pydantic modele request/response
 ├── frontend/
 │   ├── app/
-│   │   ├── page.tsx            # Discovery view
-│   │   └── crm/page.tsx        # CRM Dashboard
+│   │   ├── page.tsx             # Discovery view
+│   │   └── crm/page.tsx         # CRM Dashboard
 │   └── components/
-│       ├── CompanyCard.tsx
-│       ├── ApplicationForm.tsx
-│       └── CRMTable.tsx
-├── .env.example                # szablon zmiennych środowiskowych
-└── requirements.txt
+│       ├── CompanyCard.tsx      # karta firmy + przyciski decyzji
+│       ├── ApplicationForm.tsx  # formularz zapisywania aplikacji
+│       ├── CRMTable.tsx         # tabela z paginacją
+│       └── ManualEntryModal.tsx # modal ręcznego dodawania
+├── .env.example
+├── requirements.txt
+└── Procfile                     # start command dla Railway
 ```
 
-## Setup lokalny
+---
 
-```bash
-# Backend
-cd backend
-python -m venv .venv
-.venv\Scripts\activate        # Windows
-pip install -r requirements.txt
-cp ../.env.example .env       # uzupełnij klucze API
-uvicorn main:app --reload
+## Technologie
 
-# Frontend
-cd frontend
-npm install
-npm run dev
-```
+| Warstwa | Technologia | Wersja |
+|---|---|---|
+| Frontend | Next.js (App Router) | 14+ |
+| Styling | Tailwind CSS | 3+ |
+| Backend | FastAPI | 0.111+ |
+| Runtime | Python | 3.12 |
+| LLM | Claude Haiku (`claude-haiku-4-5-20251001`) | — |
+| LLM framework | LangChain + langchain-anthropic | 0.2+ |
+| Wyszukiwanie | SerpAPI (Google Search) | — |
+| Baza danych | PostgreSQL przez Supabase | — |
+| HTTP client | httpx + BeautifulSoup4 | — |
+| Hosting backend | Railway | — |
+| Hosting frontend | Vercel | — |
 
-## Zmienne środowiskowe
+---
 
-Skopiuj `.env.example` do `.env` i uzupełnij:
+## Deployment
 
-```
-ANTHROPIC_API_KEY=     # Anthropic Console
-TAVILY_API_KEY=        # Tavily Dashboard
-SUPABASE_URL=          # Supabase Project Settings
-SUPABASE_SERVICE_KEY=  # Supabase Project Settings → Service Role
-```
+### Backend → Railway
+
+1. Połącz repozytorium z Railway
+2. Dodaj zmienne środowiskowe w dashboardzie Railway:
+   ```
+   ANTHROPIC_API_KEY
+   SERPAPI_KEY
+   SUPABASE_URL
+   SUPABASE_SERVICE_ROLE_KEY
+   API_SECRET
+   FRONTEND_URL   ← URL frontendu na Vercel (dla CORS)
+   ```
+3. Railway wykrywa `Procfile` i deployuje automatycznie przy każdym pushu na `main`
+
+### Frontend → Vercel
+
+1. Połącz repozytorium z Vercel, ustaw **Root Directory** na `frontend`
+2. Dodaj zmienne środowiskowe:
+   ```
+   NEXT_PUBLIC_API_URL      ← URL backendu z Railway
+   NEXT_PUBLIC_API_SECRET   ← ten sam co API_SECRET w backendzie
+   ```
+3. Vercel deployuje automatycznie przy każdym pushu na `main`
