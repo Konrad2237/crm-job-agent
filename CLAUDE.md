@@ -116,7 +116,7 @@ crm-job-agent/
 
 | Czego nie robimy | Dlaczego |
 |---|---|
-| **Nie używamy agentic loop z LangChain** (gdzie LLM sam decyduje kiedy skończyć) | Poprzednie podejście = 800k tokenów, zero odpowiedzi. Pętla jest w Pythonie, LangChain używamy tylko do wywołań LLM i Tavily. |
+| **Nie używamy agentic loop z LangChain** (gdzie LLM sam decyduje kiedy skończyć) | Poprzednie podejście = 800k tokenów, zero odpowiedzi. Pętla jest w Pythonie, LangChain używamy tylko do wywołań LLM. |
 | **Nie robimy agentic loop** (LLM decyduje kiedy skończyć) | Brak kontroli nad tokenami. Loop jest w Pythonie, LLM tylko klasyfikuje. |
 | **Nie używamy n8n jako orchestratora** | Poprzednie podejście się nie sprawdziło. Backend w Pythonie. |
 | **Nie robimy mikroserwisów** | Jeden użytkownik, jeden monolit na Railway. Mikroserwisy rozwiązują problemy skali których nie mamy. |
@@ -134,7 +134,7 @@ crm-job-agent/
 
 ## Aktualny status projektu
 
-**Faza: MWS ukończony — aplikacja na produkcji**
+**Faza: produkcja — aplikacja działa, discovery dopracowany**
 *(aktualizuj przy każdej sesji)*
 
 Ukończone:
@@ -186,12 +186,21 @@ Dzień 6 — naprawy discovery:
 - [x] Filtr URLi kończących się `.pdf`
 - [x] `page_verifier` prompt: nie wymaga słowa "AI" — akceptuje ML, NLP, computer vision, automatyzację
 - [x] `verify_page()` dostaje domenę i tytuł jako dodatkowy kontekst
-- [x] `.pl` domeny → Extract homepage; non-`.pl` → snippet z Tavily
-- [x] `search_depth="advanced"` w Tavily — głębsze indeksowanie, lepsze wyniki dla małych firm
+- [x] `.pl` domeny → fetch homepage (httpx + BeautifulSoup); inne → snippet z SerpAPI
 - [x] `MAX_RESULTS` 3 → 5
 - [x] Historia zapytań (`_query_history`) usunięta — blokowała dobre tematy
 - [x] Zapytania Haiku muszą zawierać słowo firmowe (oferta/SaaS/demo/B2B/wdrożenia)
 - [x] `_name_from_title()` naprawiony — nie zwraca list miast jako nazwy firmy
+
+Po Dniu 6 — dalsze poprawki discovery:
+- [x] Migracja z Tavily na **SerpAPI** (Google Search) — `google-search-results>=2.4.2`, klucz `SERPAPI_KEY`
+- [x] `_DEFINITELY_NOT_AI` pre-filter — wąska lista fraz jednoznacznie wykluczających (agencja marketingowa, kancelaria, sklep…) — odpada przed wywołaniem Haiku
+- [x] AI signal pre-filter + rozszerzenie `_BLOCKED_DOMAINS`
+- [x] `MAX_ATTEMPTS` 3 → 1 — jedno zapytanie per `/find`, fail fast przy złych wynikach
+- [x] Zapytania niszowe zamiast kombinacji słów kluczowych — 24 precyzyjne frazy branżowe w `query_generator.py`
+- [x] Haiku luzuje klasyfikację AI software house'ów — software house specjalizujący się w AI projektach jest akceptowany
+- [x] Profesjonalne README z instalacją, przykładami, FAQ i deployment guide
+- [x] CLAUDE.md: usunięto wszystkie odwołania do Tavily, poprawiono stack
 
 ---
 
@@ -209,14 +218,14 @@ Dzień 6 — naprawy discovery:
 
 - [x] **[P1]** `asyncio.timeout(25)` w `discovery_loop.py`
 - [x] **[P2]** `safe_db_call()` wrapper w `db/client.py`
-- [x] **[P3]** `call_with_retry()` dla Tavily i Anthropic
+- [x] **[P3]** `call_with_retry()` dla SerpAPI i Anthropic
 - [x] **[P4]** Sprawdzenie pending `presented` na starcie każdego `/find` (`get_recent_presented`)
 - [x] **[P4]** Cleanup `presented` > 24h → `skipped` (`cleanup_stale_presented`)
 - [x] **[P5]** Auto-trigger kolejnego `/find` po zapisaniu aplikacji — zaimplementowane w `app/page.tsx`
 
 ### Umiarkowane (po MWS)
 
-- [x] **[U1]** Fallback na snippet gdy Tavily Extract zwraca < 300 znaków (`discovery_loop.py`)
+- [x] **[U1]** Fallback na snippet gdy fetch strony zwraca < 300 znaków (`discovery_loop.py`)
 - [x] **[U2]** `normalize_domain()` — stripuje `www.` (`db/client.py`)
 - [x] **[U3]** CORS — `FRONTEND_URL` ustawiony w Railway
 - [x] **[U3]** Shared secret header `X-API-Key` między frontendem a backendem
@@ -232,7 +241,7 @@ Dzień 6 — naprawy discovery:
 ```env
 # Backend (Railway)
 ANTHROPIC_API_KEY=
-TAVILY_API_KEY=
+SERPAPI_KEY=
 SUPABASE_URL=                        # tylko domena: https://xxx.supabase.co (BEZ /rest/v1/)
 SUPABASE_SERVICE_ROLE_KEY=           # z zakładki Legacy w Supabase → service_role
 API_SECRET=                          # shared secret z frontendem
