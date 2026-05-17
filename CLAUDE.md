@@ -23,9 +23,9 @@ Narzędzie do szukania polskich firm AI w internecie i śledzenia aplikacji o pr
 | Frontend | Next.js (App Router) + Tailwind CSS | Vercel |
 | Backend | Python 3.12 + FastAPI | Railway |
 | Baza danych | PostgreSQL | Supabase |
-| LLM framework | LangChain (`langchain`, `langchain-anthropic`, `langchain-community`) | — |
+| LLM framework | LangChain (`langchain`, `langchain-anthropic`) | — |
 | LLM model | Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) | Anthropic API |
-| Wyszukiwanie | Tavily API przez `langchain-community` | zewnętrzne |
+| Wyszukiwanie | SerpAPI (Google Search) przez `google-search-results` | zewnętrzne |
 | Monitoring | LangSmith (natywna integracja z LangChain) | zewnętrzne |
 
 ---
@@ -239,6 +239,7 @@ API_SECRET=                          # shared secret z frontendem
 LANGSMITH_TRACING=true               # opcjonalne
 LANGSMITH_API_KEY=                   # opcjonalne
 LANGSMITH_PROJECT=crm-job-agent      # opcjonalne
+FRONTEND_URL=                        # URL frontendu Vercel (do CORS)
 
 # Frontend (Vercel)
 NEXT_PUBLIC_API_URL=                 # URL Railway backend
