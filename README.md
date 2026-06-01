@@ -2,6 +2,8 @@
 
 Narzędzie do automatycznego wyszukiwania polskich firm AI i śledzenia aplikacji o pracę.
 
+**[Zobacz screenshoty i inne projekty → wizytowka-ivory.vercel.app](https://wizytowka-ivory.vercel.app)**
+
 ---
 
 ## Spis treści
@@ -219,5 +221,4 @@ Blog firmowy z artykułami może mieć 70k tokenów. Przy cenie Haiku jedno taki
 
 **Konrad Pochwała**
 
-- GitHub: [DO UZUPEŁNIENIA]
-- LinkedIn: [DO UZUPEŁNIENIA]
+[wizytowka-ivory.vercel.app](https://wizytowka-ivory.vercel.app)
