@@ -20,29 +20,37 @@ Narzędzie do automatycznego wyszukiwania polskich firm AI i śledzenia aplikacj
 
 Szukanie polskich firm AI ręcznie zajmuje dużo czasu i daje słabe wyniki — ChatGPT podaje nieistniejące linki, wyszukiwarka zwraca angielskie strony i te same portale w kółko. Jednocześnie notatnik z firmami szybko staje się bezużyteczny: brak dat, statusów i linków sprawia że nie wiadomo gdzie już wysłałem CV, a gdzie nie.
 
-CRM Job Agent rozwiązuje oba problemy. Agent sam przeszukuje internet i prezentuje jedną polską firmę AI przy każdym kliknięciu — z linkiem do strony, bez powtórzeń. Użytkownik decyduje czy aplikuje. Każda decyzja trafia do CRM: firma, stanowisko, finanse, odpowiedź rekrutera — wszystko w jednym miejscu.
+CRM Job Agent rozwiązuje oba problemy. Narzędzie samo przeszukuje internet i prezentuje jedną polską firmę AI przy każdym kliknięciu — z linkiem do strony, bez powtórzeń. Użytkownik decyduje czy aplikuje. Każda decyzja trafia do CRM: firma, stanowisko, finanse, odpowiedź rekrutera.
+
+Narzędzie dla jednej osoby — bez logowania, bez kont, bez multi-user.
 
 ---
 
 ## Funkcjonalności
 
 **Discovery — wyszukiwanie firm**
-Agent generuje zapytanie do Google, filtruje wyniki i pokazuje jedną nową polską firmę AI. Firma nigdy się nie powtarza — dedup na poziomie domeny zapisany w bazie. Jeśli użytkownik zamknął przeglądarkę przed podjęciem decyzji, firma wraca przy następnym kliknięciu zamiast zaginąć. Po 24h niepodjęta decyzja jest automatycznie oznaczana jako pominięcie.
+Losuje zapytanie z puli 24 fraz branżowych, wyszukuje przez Google i pokazuje jedną nową polską firmę AI. Każda firma zapisywana jest po domenie — ta sama firma nie pojawi się dwa razy, nawet po restarcie. Jeśli użytkownik zamknął przeglądarkę przed podjęciem decyzji, firma wraca przy następnym kliknięciu zamiast zaginąć. Po 24h niepodjęta decyzja jest automatycznie oznaczana jako pominięcie.
 
 **Karta firmy**
-Wyświetla nazwę i link do strony. Dwa przyciski: "Pomiń" (firma nie wróci) i "Wysłałem CV" (otwiera formularz). Formularz zbiera stanowisko, oczekiwania finansowe, e-mail kontaktowy i notatki. Przycisk "Zapisz i szukaj dalej" zapisuje aplikację i natychmiast wyszukuje kolejną firmę.
+Wyświetla nazwę i link do strony. Dwa przyciski: "Pomiń" (firma nie wróci) i "Wysłałem CV" (otwiera formularz aplikacji).
+
+**Formularz aplikacji**
+Zbiera stanowisko, oczekiwania finansowe, e-mail kontaktowy i notatki. Dwa tryby zapisu: "Zapisz" (wraca do ekranu głównego) i "Zapisz i szukaj dalej" (zapisuje aplikację i natychmiast wyszukuje kolejną firmę).
 
 **CRM Dashboard**
-Tabela wszystkich firm z paginacją (20 rekordów na stronę). Filtrowanie po statusie z licznikami: aplikacje, pominięte, pokazane. Wyszukiwanie po nazwie lub domenie — działa na całej bazie, nie tylko na bieżącej stronie. Sortowanie po nazwie firmy, statusie i dacie. Pasek statystyk z response rate.
+Tabela wszystkich firm z paginacją (20 rekordów na stronę). Filtrowanie po statusie z licznikami: aplikacje, pominięte, pokazane. Wyszukiwanie po nazwie lub domenie — działa na całej bazie, nie tylko na bieżącej stronie. Sortowanie po nazwie firmy, statusie i dacie. Pasek statystyk z liczbą aplikacji i odsetkiem odpowiedzi.
 
 **Ręczne dodawanie**
-Modal "+ Dodaj ręcznie" dla firm znalezionych samodzielnie na OLX, Pracuj.pl lub gdzie indziej. Dedup — jeśli domena już jest w bazie, formularz zwraca błąd zamiast tworzyć duplikat.
+Okno "+ Dodaj ręcznie" dla firm znalezionych samodzielnie na OLX, Pracuj.pl lub gdzie indziej. Firma trafia od razu ze statusem "wysłano CV" — formularz zakłada że użytkownik już aplikował. Jeśli domena już jest w bazie, formularz zwraca błąd zamiast tworzyć duplikat.
 
 **Śledzenie odpowiedzi**
-Dla każdej aplikacji można ustawić status odpowiedzi: Odrzucono / Zaproszono na rozmowę / Oferta. Kolorowe badge w tabeli. Pole tekstowe na treść lub datę odpowiedzi.
+Dla każdej aplikacji można ustawić status odpowiedzi: Odrzucono / Zaproszono na rozmowę / Oferta. Kolorowe etykiety w tabeli. Pole tekstowe na treść lub datę odpowiedzi.
 
 **Edycja i usuwanie**
-Każdy rekord edytowalny przez modal — wszystkie pola, łącznie ze statusem. Usunięcie wymaga potwierdzenia. Uwaga: usuniętą firmę agent może znaleźć ponownie.
+Każdy rekord edytowalny przez okno dialogowe — wszystkie pola, łącznie ze statusem. Usunięcie wymaga potwierdzenia. Usuniętą firmę narzędzie może znaleźć ponownie.
+
+**Zabezpieczenie API**
+Wszystkie requesty między frontendem a backendem wymagają nagłówka `X-Api-Key` ze wspólnym sekretem. Bez klucza backend zwraca 401. Health check `GET /` pozostaje otwarty — Railway używa go do sprawdzania czy serwer działa.
 
 ---
 
@@ -76,7 +84,7 @@ Klik "Znajdź firmę"
   │
   ├─ Czy jest firma w statusie "presented" z ostatnich 24h?
   │   TAK → zwróć ją (użytkownik nie podjął decyzji)
-  │   NIE → wyczyść stare "presented" starsze niż 24h → ustaw na "skipped"
+  │   NIE → wyczyść stale "presented" starsze niż 24h → ustaw na "skipped"
   │
   ▼
 generate_query() — losowy wybór z 24 hardkodowanych fraz branżowych
@@ -101,11 +109,15 @@ SerpAPI Google Search (gl=pl, hl=pl, num=5)
 Claude Haiku 4.5 — structured output, max 2000 znaków treści
 {is_polish: bool, is_ai_company: bool}
   │
-  ├─ PASS → save_company() status="presented" → zwróć firmę użytkownikowi
+  ├─ PASS → save_company() status="presented" → zwróć firmę
+  │          frontend: wyświetl kartę → decyzja użytkownika
+  │          "Wysłałem CV" → formularz → POST /apply → auto POST /find → kolejna firma
   └─ FAIL → save_skipped_domain() → sprawdź następny wynik
   │
   brak pasującego wyniku → HTTP 404 → "Spróbuj ponownie"
 ```
+
+Jedno wywołanie `/find` = jedno zapytanie Google, maksymalnie 5 kandydatów. Jeśli żaden nie przejdzie filtrów, backend zwraca 404 — użytkownik klika ponownie. To świadoma decyzja: szybkie "spróbuj ponownie" zamiast kolejnych zapytań w tej samej sesji.
 
 Cały `find_company()` ma twardy limit `asyncio.timeout(55s)`.
 
@@ -115,21 +127,21 @@ Cały `find_company()` ma twardy limit `asyncio.timeout(55s)`.
 Wcześniejsze podejście (agentic loop gdzie LLM sam decyduje kiedy skończyć) skończyło się na 800k tokenów bez odpowiedzi. Tutaj pętla jest w Pythonie. Claude Haiku odpowiada tylko na jedno pytanie: "czy ta strona to polska firma AI?". Logika "co dalej" należy wyłącznie do kodu.
 
 **Generowanie zapytań bez LLM**
-Zapytania były początkowo generowane przez Haiku z historią poprzednich zapytań. W praktyce historia blokowała całe nisze — po jednej aplikacji do firmy HR AI agent przestawał szukać w tej branży. Rozwiązanie: 24 precyzyjne frazy branżowe, `random.choice()` przy każdym wywołaniu. Prostsze, przewidywalne i bez kosztu tokenów.
+Zapytania były początkowo generowane przez Haiku z historią poprzednich zapytań. W praktyce historia blokowała całe nisze — po jednej aplikacji do firmy HR AI narzędzie przestawało szukać w tej branży. Rozwiązanie: 24 precyzyjne frazy branżowe, `random.choice()` przy każdym wywołaniu. Prostsze, przewidywalne, zero kosztu tokenów.
 
-**Snippet-first**
+**Snippet jako priorytet, fetch strony jako fallback**
 Snippet z Google Search wystarczy do klasyfikacji dla większości firm — Google już go przygotował. Fetch strony uruchamia się tylko gdy snippet ma mniej niż 150 znaków. Oszczędza 3–8 sekund na kandydacie.
-
-**Trzy warstwy obrony przed duplikatami**
-1. Disabled button podczas requesta — zapobiega race condition po stronie użytkownika
-2. `UNIQUE(domain)` w bazie danych — gwarantuje unikalność na poziomie DB
-3. `ON CONFLICT (domain) DO NOTHING` przy każdym INSERT — obsługuje przypadek gdy dwa requesty dotrą jednocześnie
 
 **Dedup na znormalizowanej domenie**
 `www.firma.pl` i `firma.pl` to ta sama firma. `normalize_domain()` stripuje prefiks przed każdym zapisem i sprawdzeniem. Batch query — jedno zapytanie SQL dla całej partii kandydatów zamiast osobnego dla każdego.
 
+**Trzy warstwy obrony przed duplikatami**
+1. Wyłączony przycisk podczas requesta — zapobiega race condition po stronie użytkownika
+2. `UNIQUE(domain)` w bazie danych — gwarantuje unikalność na poziomie DB
+3. `ON CONFLICT (domain) DO NOTHING` przy każdym INSERT — obsługuje przypadek gdy dwa requesty dotrą jednocześnie
+
 **Truncacja treści do 2000 znaków**
-Blog z 200 artykułami może mieć 70k tokenów. Przy normalnym koszcie $0.001 za weryfikację, taka strona kosztuje $0.056 — 56× więcej, z czasem odpowiedzi 8–15 sekund. Pierwsze 2000 znaków zawiera zawsze hero, opis usług i "o nas" — wszystko co Haiku potrzebuje do klasyfikacji.
+Blog z 200 artykułami może mieć 70k tokenów. Przy normalnym koszcie $0.001 za weryfikację, taka strona kosztuje $0.056 — 56× więcej, z czasem odpowiedzi 8–15 sekund. Nagłówek strony i sekcja usług mieszczą się w pierwszych 2000 znakach — wszystko co Haiku potrzebuje do klasyfikacji. Artykuły zaczynają się za tym progiem.
 
 ---
 
@@ -161,15 +173,15 @@ crm-job-agent/
 │   │   ├── layout.tsx            # Root layout — nawigacja Odkrywanie / CRM
 │   │   ├── page.tsx              # Discovery — maszyna stanów: idle → found → applying
 │   │   └── crm/
-│   │       └── page.tsx          # CRM Dashboard — paginacja, filtry, search, sort, modale
+│   │       └── page.tsx          # CRM Dashboard — paginacja, filtry, search, sort, okna dialogowe
 │   │
 │   ├── components/
 │   │   ├── CompanyCard.tsx       # Karta firmy + przyciski Pomiń / Wysłałem CV
 │   │   ├── ApplicationForm.tsx   # Formularz aplikacji z dwoma trybami zapisu
-│   │   ├── CRMTable.tsx          # Tabela z sortowaniem, badge statusów, copy email
-│   │   ├── ManualEntryModal.tsx  # Modal ręcznego dodawania firmy
-│   │   ├── ReplyModal.tsx        # Modal odpowiedzi od rekrutera
-│   │   └── CompanyEditModal.tsx  # Modal edycji i usunięcia z potwierdzeniem
+│   │   ├── CRMTable.tsx          # Tabela z sortowaniem, etykietami statusów, kopiowaniem e-maila
+│   │   ├── ManualEntryModal.tsx  # Okno ręcznego dodawania firmy
+│   │   ├── ReplyModal.tsx        # Okno odpowiedzi od rekrutera
+│   │   └── CompanyEditModal.tsx  # Okno edycji i usunięcia z potwierdzeniem
 │   │
 │   └── lib/
 │       └── api.ts                # Typowany klient HTTP — X-Api-Key header, obsługa błędów
@@ -187,19 +199,19 @@ crm-job-agent/
 Pierwsza wersja używała LangChain AgentExecutor gdzie LLM decydował kiedy skończyć szukanie. Skończyło się na 800k tokenów i braku odpowiedzi. Wniosek: jeśli LLM kontroluje pętlę, koszt jest nieprzewidywalny. Pętla musi być w kodzie — LLM odpowiada tylko na jedno, konkretne pytanie.
 
 **Prostota wygrywa nad elegancją**
-Generowanie zapytań przez Haiku z historią poprzednich zapytań brzmiało sensownie. W praktyce historia blokowała całe nisze. Zastąpiłem to `random.choice()` z 24 frazami. Prostsze, szybsze, tańsze — i działa lepiej.
+Generowanie zapytań przez Haiku z historią poprzednich zapytań brzmiało sensownie. W praktyce historia blokowała całe nisze. Zastąpiłem to `random.choice()` z 24 frazami. Prostsze, przewidywalne, zero kosztu tokenów.
 
 **Pre-filtry są tańsze niż LLM**
-Zamiast wysyłać każdy wynik Google do Haiku, najpierw uruchamiam serię sprawdzeń w czystym Pythonie: blocklist, polskie znaki, wzorce URL artykułów, frazy wykluczające. Haiku dostaje tylko kandydatów którzy przeszli wszystkie pre-filtry. Redukuje liczbę wywołań LLM o kilkadziesiąt procent.
+Zamiast wysyłać każdy wynik Google do Haiku, najpierw uruchamiam serię sprawdzeń w czystym Pythonie: lista zablokowanych domen, polskie znaki, wzorce URL artykułów, frazy wykluczające. Haiku dostaje tylko kandydatów którzy przeszli wszystkie filtry — w praktyce 1–3 wywołania zamiast 5 na każde zapytanie.
 
 **Race conditions pojawiają się w nieoczekiwanych miejscach**
-Podwójne kliknięcie przy wolnym połączeniu — dwa równoległe POST /find — oba sprawdzają dedup jednocześnie, oba widzą domenę jako nową, oba próbują zapisać. Rozwiązanie wymagało trzech warstw: disabled button, UNIQUE constraint w DB, ON CONFLICT DO NOTHING przy INSERT.
+Podwójne kliknięcie przy wolnym połączeniu — dwa równoległe POST /find — oba sprawdzają dedup jednocześnie, oba widzą domenę jako nową, oba próbują zapisać. Rozwiązanie wymagało trzech warstw: wyłączony przycisk, UNIQUE constraint w DB, ON CONFLICT DO NOTHING przy INSERT.
 
 **Status "pokazana ale bez decyzji" to realny problem**
 Użytkownik widzi firmę, otwiera link, zamyka laptopa. Firma ma status "presented" — dedup ją złapie przy kolejnym wywołaniu i nie wróci. Stracona bez śladu. Rozwiązanie: przy każdym POST /find sprawdź najpierw czy jest nierozstrzygnięta firma z ostatnich 24h i zwróć ją ponownie.
 
 **Truncacja treści to decyzja produktowa, nie ograniczenie techniczne**
-Blog firmowy z artykułami może mieć 70k tokenów. Przy cenie Haiku jedno takie wywołanie kosztuje 56× więcej niż normalne i trwa 8–15 sekund zamiast 1–2. Pierwsze 2000 znaków każdej strony zawiera zawsze to co potrzebne do klasyfikacji — hero i opis usług. Artykuły zaczynają się za tym progiem.
+Blog firmowy z artykułami może mieć 70k tokenów. Przy cenie Haiku jedno takie wywołanie kosztuje 56× więcej niż normalne i trwa 8–15 sekund zamiast 1–2. Nagłówek strony i sekcja usług mieszczą się w pierwszych 2000 znakach. Artykuły zaczynają się za tym progiem — nie są potrzebne do klasyfikacji.
 
 ---
 
