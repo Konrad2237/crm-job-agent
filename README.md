@@ -1,261 +1,135 @@
 # CRM Job Agent
 
-Narzędzie do automatycznego wyszukiwania polskich firm AI i śledzenia aplikacji o pracę. Agent szuka firm w Google, klasyfikuje je przez Claude Haiku, a wyniki trafiają do wbudowanego CRM z widokiem kanban i statystykami.
+Narzędzie do automatycznego wyszukiwania polskich firm AI i śledzenia aplikacji o pracę.
 
 ---
 
 ## Spis treści
 
-- [Opis i motywacja](#opis-i-motywacja)
-- [Wymagania](#wymagania)
-- [Instalacja krok po kroku](#instalacja-krok-po-kroku)
-- [Przykłady użycia](#przykłady-użycia)
-- [Struktura projektu](#struktura-projektu)
-- [Technologie i wersje](#technologie-i-wersje)
-- [Deployment produkcyjny](#deployment-produkcyjny)
-- [FAQ i rozwiązywanie problemów](#faq-i-rozwiązywanie-problemów)
-- [Licencja](#licencja)
+1. [Co to robi](#co-to-robi)
+2. [Funkcjonalności](#funkcjonalności)
+3. [Technologie](#technologie)
+4. [Jak to działa](#jak-to-działa)
+5. [Struktura projektu](#struktura-projektu)
+6. [Czego się nauczyłem](#czego-się-nauczyłem)
+7. [Autor](#autor)
 
 ---
 
-## Opis i motywacja
+## Co to robi
 
-**Problem:** Ręczne szukanie firm AI przez ChatGPT daje złe linki, angielskie strony i ciągłe powtórki. Notatnik z firmami nie ma linków, dat, stanowisk ani statusów — łatwo się zgubić we własnych aplikacjach.
+Szukanie polskich firm AI ręcznie zajmuje dużo czasu i daje słabe wyniki — ChatGPT podaje nieistniejące linki, wyszukiwarka zwraca angielskie strony i te same portale w kółko. Jednocześnie notatnik z firmami szybko staje się bezużyteczny: brak dat, statusów i linków sprawia że nie wiadomo gdzie już wysłałem CV, a gdzie nie.
 
-**Rozwiązanie:** Jedno kliknięcie → agent wyszukuje jedną polską firmę z obszaru AI, której jeszcze nie odwiedziłeś → otwierasz link, decydujesz czy aplikujesz → dane trafiają do CRM → agent szuka kolejnej.
-
-**Jak to działa pod spodem:**
-
-1. Losuje zapytanie z puli 24 fraz branżowych (automatyzacja, ML, NLP, fintech AI…)
-2. Wyszukuje przez SerpAPI (Google) — do 5 wyników
-3. Filtruje heurystycznie: blokuje portale, artykuły rankingowe, strony `.edu`, domeny anglojęzyczne
-4. Weryfikuje przez Claude Haiku — czy firma jest polska i czy sprzedaje AI
-5. Normalizuje domenę i sprawdza dedup w bazie
-6. Zwraca firmę lub po wyczerpaniu prób zwraca 404
-
-Cały flow trwa 5–25 sekund. Pętla jest w Pythonie — LLM robi tylko klasyfikację.
+CRM Job Agent rozwiązuje oba problemy. Agent sam przeszukuje internet i prezentuje jedną polską firmę AI przy każdym kliknięciu — z linkiem do strony, bez powtórzeń. Użytkownik decyduje czy aplikuje. Każda decyzja trafia do CRM: firma, stanowisko, finanse, odpowiedź rekrutera — wszystko w jednym miejscu.
 
 ---
 
-## Wymagania
+## Funkcjonalności
 
-### Konta zewnętrzne (wymagane)
+**Discovery — wyszukiwanie firm**
+Agent generuje zapytanie do Google, filtruje wyniki i pokazuje jedną nową polską firmę AI. Firma nigdy się nie powtarza — dedup na poziomie domeny zapisany w bazie. Jeśli użytkownik zamknął przeglądarkę przed podjęciem decyzji, firma wraca przy następnym kliknięciu zamiast zaginąć. Po 24h niepodjęta decyzja jest automatycznie oznaczana jako pominięcie.
 
-| Usługa | Do czego | Link |
+**Karta firmy**
+Wyświetla nazwę i link do strony. Dwa przyciski: "Pomiń" (firma nie wróci) i "Wysłałem CV" (otwiera formularz). Formularz zbiera stanowisko, oczekiwania finansowe, e-mail kontaktowy i notatki. Przycisk "Zapisz i szukaj dalej" zapisuje aplikację i natychmiast wyszukuje kolejną firmę.
+
+**CRM Dashboard**
+Tabela wszystkich firm z paginacją (20 rekordów na stronę). Filtrowanie po statusie z licznikami: aplikacje, pominięte, pokazane. Wyszukiwanie po nazwie lub domenie — działa na całej bazie, nie tylko na bieżącej stronie. Sortowanie po nazwie firmy, statusie i dacie. Pasek statystyk z response rate.
+
+**Ręczne dodawanie**
+Modal "+ Dodaj ręcznie" dla firm znalezionych samodzielnie na OLX, Pracuj.pl lub gdzie indziej. Dedup — jeśli domena już jest w bazie, formularz zwraca błąd zamiast tworzyć duplikat.
+
+**Śledzenie odpowiedzi**
+Dla każdej aplikacji można ustawić status odpowiedzi: Odrzucono / Zaproszono na rozmowę / Oferta. Kolorowe badge w tabeli. Pole tekstowe na treść lub datę odpowiedzi.
+
+**Edycja i usuwanie**
+Każdy rekord edytowalny przez modal — wszystkie pola, łącznie ze statusem. Usunięcie wymaga potwierdzenia. Uwaga: usuniętą firmę agent może znaleźć ponownie.
+
+---
+
+## Technologie
+
+| Narzędzie | Wersja | Do czego |
 |---|---|---|
-| [Anthropic](https://console.anthropic.com) | Claude Haiku — klasyfikacja firm | `ANTHROPIC_API_KEY` |
-| [SerpAPI](https://serpapi.com) | Google Search — wyszukiwanie firm | `SERPAPI_KEY` |
-| [Supabase](https://supabase.com) | PostgreSQL — baza danych | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
-
-### Konta zewnętrzne (opcjonalne)
-
-| Usługa | Do czego |
-|---|---|
-| [LangSmith](https://smith.langchain.com) | Monitoring wywołań LLM |
-| [Railway](https://railway.app) | Hosting backendu |
-| [Vercel](https://vercel.com) | Hosting frontendu |
-
-### Środowisko lokalne
-
-- **Python 3.12+**
-- **Node.js 20+** i **npm**
-- **Git**
+| Next.js | 16.2.6 | Frontend — App Router, dwie strony: Discovery i CRM |
+| React | 19.2.4 | Komponenty UI |
+| Tailwind CSS | 4.x | Stylowanie |
+| TypeScript | 5.x | Typowanie frontendu |
+| Python | 3.12 | Backend |
+| FastAPI | ≥0.111.0 | REST API, CORS, auth middleware |
+| LangChain + langchain-anthropic | ≥0.2.0 | Wywołania Claude z automatycznym LangSmith tracingiem |
+| Claude Haiku 4.5 | claude-haiku-4-5-20251001 | Klasyfikacja strony: polska firma AI tak/nie (structured output) |
+| SerpAPI | ≥2.4.2 | Google Search — wyszukiwanie firm (gl=pl, hl=pl) |
+| httpx + BeautifulSoup4 | ≥0.27.0 / ≥4.12.0 | Pobieranie i parsowanie treści stron jako fallback |
+| Supabase | ≥2.5.0 | PostgreSQL — baza danych, async client |
+| Railway | — | Hosting backendu (~$5/mies) |
+| Vercel | — | Hosting frontendu (Hobby plan, bezpłatny) |
+| LangSmith | — | Monitorowanie wywołań LLM — tokeny, czas, cache (opcjonalne) |
 
 ---
 
-## Instalacja krok po kroku
+## Jak to działa
 
-### 1. Sklonuj repozytorium
+### Flow wyszukiwania (POST /find)
 
-```bash
-git clone <url-repozytorium>
-cd crm-job-agent
+```
+Klik "Znajdź firmę"
+  │
+  ├─ Czy jest firma w statusie "presented" z ostatnich 24h?
+  │   TAK → zwróć ją (użytkownik nie podjął decyzji)
+  │   NIE → wyczyść stare "presented" starsze niż 24h → ustaw na "skipped"
+  │
+  ▼
+generate_query() — losowy wybór z 24 hardkodowanych fraz branżowych
+np. "polska firma RAG baza wiedzy LLM wdrożenia"
+  │
+  ▼
+SerpAPI Google Search (gl=pl, hl=pl, num=5)
+  │
+  dla każdego z 5 wyników:
+  ├─ normalize_domain() — stripuje www., wyciąga domenę
+  ├─ batch dedup — jedno zapytanie SQL dla wszystkich 5 domen naraz
+  ├─ blocklist domen (media, social, portale pracy, uczelnie…)
+  ├─ pre-filter: domena .pl lub polskie znaki diakrytyczne w snippecie?
+  ├─ pre-filter: URL lub tytuł wygląda jak artykuł / ranking / lista?
+  ├─ pre-filter: snippet jednoznacznie wyklucza firmę AI?
+  │
+  ├─ snippet ≥150 znaków → użyj snippetu (bez dodatkowego fetcha)
+  └─ snippet <150 znaków → pobierz stronę (httpx + BS4, timeout 5s)
+                            fallback na snippet jeśli fetch zawiedzie
+  │
+  ▼
+Claude Haiku 4.5 — structured output, max 2000 znaków treści
+{is_polish: bool, is_ai_company: bool}
+  │
+  ├─ PASS → save_company() status="presented" → zwróć firmę użytkownikowi
+  └─ FAIL → save_skipped_domain() → sprawdź następny wynik
+  │
+  brak pasującego wyniku → HTTP 404 → "Spróbuj ponownie"
 ```
 
-### 2. Utwórz plik `.env`
+Cały `find_company()` ma twardy limit `asyncio.timeout(55s)`.
 
-```bash
-cp .env.example .env
-```
+### Kluczowe decyzje techniczne
 
-Uzupełnij wartości w `.env`:
+**LLM tylko do klasyfikacji, nie do orkiestracji**
+Wcześniejsze podejście (agentic loop gdzie LLM sam decyduje kiedy skończyć) skończyło się na 800k tokenów bez odpowiedzi. Tutaj pętla jest w Pythonie. Claude Haiku odpowiada tylko na jedno pytanie: "czy ta strona to polska firma AI?". Logika "co dalej" należy wyłącznie do kodu.
 
-```env
-# Backend
-ANTHROPIC_API_KEY=sk-ant-...
-SERPAPI_KEY=...
-SUPABASE_URL=https://twoj-projekt.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-API_SECRET=losowy-tajny-klucz-min-32-znaki
-FRONTEND_URL=http://localhost:3000
+**Generowanie zapytań bez LLM**
+Zapytania były początkowo generowane przez Haiku z historią poprzednich zapytań. W praktyce historia blokowała całe nisze — po jednej aplikacji do firmy HR AI agent przestawał szukać w tej branży. Rozwiązanie: 24 precyzyjne frazy branżowe, `random.choice()` przy każdym wywołaniu. Prostsze, przewidywalne i bez kosztu tokenów.
 
-# Monitoring (opcjonalne)
-LANGSMITH_TRACING=true
-LANGSMITH_API_KEY=ls__...
-LANGSMITH_PROJECT=crm-job-agent
+**Snippet-first**
+Snippet z Google Search wystarczy do klasyfikacji dla większości firm — Google już go przygotował. Fetch strony uruchamia się tylko gdy snippet ma mniej niż 150 znaków. Oszczędza 3–8 sekund na kandydacie.
 
-# Frontend
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_API_SECRET=ten-sam-co-API_SECRET
-```
+**Trzy warstwy obrony przed duplikatami**
+1. Disabled button podczas requesta — zapobiega race condition po stronie użytkownika
+2. `UNIQUE(domain)` w bazie danych — gwarantuje unikalność na poziomie DB
+3. `ON CONFLICT (domain) DO NOTHING` przy każdym INSERT — obsługuje przypadek gdy dwa requesty dotrą jednocześnie
 
-> **Uwaga:** `SUPABASE_URL` to tylko domena — `https://xxx.supabase.co` — bez `/rest/v1/`. SDK dodaje ścieżkę samo.
-> `SUPABASE_SERVICE_ROLE_KEY` to klucz z zakładki **API → Legacy** w Supabase (nie `anon`).
+**Dedup na znormalizowanej domenie**
+`www.firma.pl` i `firma.pl` to ta sama firma. `normalize_domain()` stripuje prefiks przed każdym zapisem i sprawdzeniem. Batch query — jedno zapytanie SQL dla całej partii kandydatów zamiast osobnego dla każdego.
 
-### 3. Utwórz tabelę w Supabase
-
-W SQL Editor w panelu Supabase wykonaj:
-
-```sql
-create table companies (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  url text,
-  domain text unique,
-  what_they_do text,
-  source text not null default 'agent',
-  status text not null default 'presented',
-  position text,
-  salary_expectation text,
-  contact_email text,
-  notes text,
-  reply_received text,
-  reply_status text,
-  created_at timestamptz not null default now(),
-  applied_at timestamptz,
-  updated_at timestamptz not null default now()
-);
-```
-
-> Kolumna `domain` ma `UNIQUE` — zapobiega duplikatom na poziomie bazy.
-
-### 4. Uruchom backend
-
-```bash
-cd backend
-pip install -r ../requirements.txt
-uvicorn main:app --reload --port 8000
-```
-
-Backend działa na `http://localhost:8000`. Sprawdź: `http://localhost:8000/` → `{"status": "ok"}`.
-
-### 5. Uruchom frontend
-
-W nowym terminalu:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend działa na `http://localhost:3000`.
-
----
-
-## Przykłady użycia
-
-### Przykład 1 — Znalezienie i ocena nowej firmy (podstawowy)
-
-1. Otwórz `http://localhost:3000`
-2. Kliknij **"Znajdź firmę"** — przycisk blokuje się na czas wyszukiwania (5–25 sek)
-3. Agent zwraca kartę firmy z nazwą, domeną i linkiem do strony głównej
-4. Kliknij link → zweryfikuj firmę w przeglądarce
-5. Zdecyduj:
-   - **"Pomiń"** → firma trafia do `skipped`, agent szuka kolejnej przy następnym kliknięciu
-   - **"Wysłałem CV"** → otwiera formularz aplikacji
-
-Bezpośrednio przez API:
-
-```bash
-curl -X POST http://localhost:8000/find \
-  -H "X-Api-Key: twoj-api-secret"
-```
-
-Przykładowa odpowiedź:
-
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "Addepto",
-  "url": "https://addepto.com",
-  "domain": "addepto.com",
-  "status": "presented",
-  "source": "agent",
-  "created_at": "2026-05-17T12:30:00Z"
-}
-```
-
----
-
-### Przykład 2 — Pełny cykl aplikacji z zapisem danych (złożony)
-
-**Scenariusz:** Znalazłeś firmę, wysłałeś CV, a tydzień później dostałeś odpowiedź z zaproszeniem na rozmowę.
-
-**Krok 1 — Wyślij CV i zapisz szczegóły:**
-
-```bash
-# ID firmy z poprzedniego /find
-COMPANY_ID="550e8400-e29b-41d4-a716-446655440000"
-
-curl -X POST "http://localhost:8000/companies/${COMPANY_ID}/apply" \
-  -H "Content-Type: application/json" \
-  -H "X-Api-Key: twoj-api-secret" \
-  -d '{
-    "position": "ML Engineer",
-    "salary_expectation": "18000-22000 PLN",
-    "contact_email": "hr@addepto.com",
-    "notes": "Rozmawiałem z Tomkiem na LinkedIn przed aplikacją"
-  }'
-```
-
-W interfejsie: kliknij **"Wysłałem CV"** → wypełnij formularz → kliknij **"Zapisz i szukaj dalej"** — agent automatycznie wyszuka kolejną firmę bez dodatkowego kliknięcia.
-
-**Krok 2 — Zapisz odpowiedź na aplikację:**
-
-```bash
-curl -X PATCH "http://localhost:8000/companies/${COMPANY_ID}" \
-  -H "Content-Type: application/json" \
-  -H "X-Api-Key: twoj-api-secret" \
-  -d '{
-    "reply_status": "interview",
-    "reply_received": "2026-05-24"
-  }'
-```
-
-W interfejsie (CRM Dashboard): znajdź firmę w tabeli → kliknij **"Odpowiedź"** → wybierz status i datę.
-
-**Krok 3 — Podgląd statystyk:**
-
-```bash
-curl http://localhost:8000/companies/stats \
-  -H "X-Api-Key: twoj-api-secret"
-```
-
-```json
-{
-  "applied": 12,
-  "skipped": 47,
-  "presented": 1,
-  "replied": 3
-}
-```
-
-**Krok 4 — Ręczne dodanie firmy z OLX/Pracuj.pl:**
-
-Gdy znajdziesz firmę poza agentem — w CRM Dashboard kliknij **"+ Dodaj ręcznie"** lub przez API:
-
-```bash
-curl -X POST http://localhost:8000/companies/manual \
-  -H "Content-Type: application/json" \
-  -H "X-Api-Key: twoj-api-secret" \
-  -d '{
-    "name": "SoftwareMill",
-    "url": "https://softwaremill.com",
-    "position": "Senior Scala Developer",
-    "notes": "Znaleziona na Pracuj.pl"
-  }'
-```
+**Truncacja treści do 2000 znaków**
+Blog z 200 artykułami może mieć 70k tokenów. Przy normalnym koszcie $0.001 za weryfikację, taka strona kosztuje $0.056 — 56× więcej, z czasem odpowiedzi 8–15 sekund. Pierwsze 2000 znaków zawiera zawsze hero, opis usług i "o nas" — wszystko co Haiku potrzebuje do klasyfikacji.
 
 ---
 
@@ -264,249 +138,74 @@ curl -X POST http://localhost:8000/companies/manual \
 ```
 crm-job-agent/
 │
-├── .env                          # Sekrety lokalne — NIE commitować (jest w .gitignore)
-├── .env.example                  # Szablon zmiennych — commitować
-├── requirements.txt              # Zależności Pythona
-├── Procfile                      # Start command dla Railway
-│
 ├── backend/
-│   ├── main.py                   # FastAPI app: CORS, auth middleware, rejestracja routerów
-│   │
-│   ├── routers/
-│   │   ├── discovery.py          # POST /find, /companies/{id}/skip, /companies/{id}/apply
-│   │   └── companies.py          # GET /companies, GET /stats, POST /manual, PATCH, DELETE
+│   ├── main.py                   # FastAPI app, CORS, middleware X-Api-Key
 │   │
 │   ├── core/
-│   │   ├── discovery_loop.py     # Główna pętla: SerpAPI → filtry heurystyczne → Haiku → dedup → zapis
-│   │   ├── query_generator.py    # Losuje jedno z 24 zapytań branżowych (nie używa LLM)
-│   │   └── page_verifier.py      # Haiku klasyfikuje: is_polish + is_ai_company (structured output)
+│   │   ├── discovery_loop.py     # Pętla wyszukiwania — filtry, SerpAPI, fetch, Haiku
+│   │   ├── page_verifier.py      # Claude Haiku: is_polish + is_ai_company
+│   │   └── query_generator.py    # random.choice z 24 fraz branżowych
 │   │
 │   ├── db/
-│   │   └── client.py             # Supabase async client: wszystkie zapytania SQL, safe_db_call()
+│   │   └── client.py             # Supabase async client, normalize_domain, safe_db_call
+│   │
+│   ├── routers/
+│   │   ├── discovery.py          # POST /find  /skip  /apply
+│   │   └── companies.py          # GET /companies  /stats  POST /manual  PATCH  DELETE
 │   │
 │   └── models/
-│       └── schemas.py            # Pydantic modele: CompanyOut, ApplyRequest, PatchCompanyRequest…
+│       └── schemas.py            # Pydantic modele request/response
 │
-└── frontend/
-    ├── package.json
-    ├── next.config.ts            # Turbopack config
-    │
-    ├── lib/
-    │   └── api.ts                # Klient HTTP: apiFetch() z X-Api-Key header, wszystkie endpointy
-    │
-    ├── app/
-    │   ├── layout.tsx            # Root layout: nawigacja Odkrywanie / CRM, font Geist
-    │   ├── page.tsx              # Widok Discovery: przycisk Znajdź firmę, karta, formularz
-    │   └── crm/
-    │       └── page.tsx          # CRM Dashboard: tabela, filtry, stats, modale
-    │
-    └── components/
-        ├── CompanyCard.tsx       # Karta znalezionej firmy + przyciski Pomiń / Wysłałem CV
-        ├── ApplicationForm.tsx   # Formularz: stanowisko, oczekiwania, email, notatki
-        ├── CRMTable.tsx          # Tabela z paginacją (20/strona), sortowaniem, linkami
-        ├── ManualEntryModal.tsx  # Modal ręcznego dodawania firmy z OLX/Pracuj.pl
-        ├── ReplyModal.tsx        # Modal zapisu odpowiedzi: status + data
-        └── CompanyEditModal.tsx  # Modal edycji i usuwania firmy z CRM
+├── frontend/
+│   ├── app/
+│   │   ├── layout.tsx            # Root layout — nawigacja Odkrywanie / CRM
+│   │   ├── page.tsx              # Discovery — maszyna stanów: idle → found → applying
+│   │   └── crm/
+│   │       └── page.tsx          # CRM Dashboard — paginacja, filtry, search, sort, modale
+│   │
+│   ├── components/
+│   │   ├── CompanyCard.tsx       # Karta firmy + przyciski Pomiń / Wysłałem CV
+│   │   ├── ApplicationForm.tsx   # Formularz aplikacji z dwoma trybami zapisu
+│   │   ├── CRMTable.tsx          # Tabela z sortowaniem, badge statusów, copy email
+│   │   ├── ManualEntryModal.tsx  # Modal ręcznego dodawania firmy
+│   │   ├── ReplyModal.tsx        # Modal odpowiedzi od rekrutera
+│   │   └── CompanyEditModal.tsx  # Modal edycji i usunięcia z potwierdzeniem
+│   │
+│   └── lib/
+│       └── api.ts                # Typowany klient HTTP — X-Api-Key header, obsługa błędów
+│
+├── Procfile                      # Railway start command
+├── requirements.txt              # Zależności Pythona
+└── .env.example                  # Szablon zmiennych środowiskowych
 ```
 
 ---
 
-## Technologie i wersje
+## Czego się nauczyłem
 
-### Backend
+**Agentic loops bez kontroli tokenów to pułapka**
+Pierwsza wersja używała LangChain AgentExecutor gdzie LLM decydował kiedy skończyć szukanie. Skończyło się na 800k tokenów i braku odpowiedzi. Wniosek: jeśli LLM kontroluje pętlę, koszt jest nieprzewidywalny. Pętla musi być w kodzie — LLM odpowiada tylko na jedno, konkretne pytanie.
 
-| Technologia | Wersja | Rola |
-|---|---|---|
-| Python | 3.12 | Runtime |
-| FastAPI | ≥0.111.0 | HTTP framework, walidacja, CORS |
-| Uvicorn | ≥0.30.0 | ASGI server |
-| LangChain | ≥0.2.0 | Orkiestracja wywołań LLM |
-| langchain-anthropic | ≥0.1.0 | Wrapper Claude Haiku (structured output) |
-| Claude Haiku 4.5 | `claude-haiku-4-5-20251001` | Klasyfikacja firm (is_polish, is_ai_company) |
-| google-search-results | ≥2.4.2 | SerpAPI — wyszukiwarka Google |
-| httpx | ≥0.27.0 | Async HTTP — pobieranie treści stron |
-| BeautifulSoup4 | ≥4.12.0 | Parsowanie HTML |
-| supabase-py | ≥2.5.0 | Async klient Supabase/PostgreSQL |
-| Pydantic | ≥2.0.0 | Walidacja danych |
-| python-dotenv | ≥1.0.0 | Ładowanie `.env` |
+**Prostota wygrywa nad elegancją**
+Generowanie zapytań przez Haiku z historią poprzednich zapytań brzmiało sensownie. W praktyce historia blokowała całe nisze. Zastąpiłem to `random.choice()` z 24 frazami. Prostsze, szybsze, tańsze — i działa lepiej.
 
-### Frontend
+**Pre-filtry są tańsze niż LLM**
+Zamiast wysyłać każdy wynik Google do Haiku, najpierw uruchamiam serię sprawdzeń w czystym Pythonie: blocklist, polskie znaki, wzorce URL artykułów, frazy wykluczające. Haiku dostaje tylko kandydatów którzy przeszli wszystkie pre-filtry. Redukuje liczbę wywołań LLM o kilkadziesiąt procent.
 
-| Technologia | Wersja | Rola |
-|---|---|---|
-| Next.js | 16.2.6 | Framework (App Router, Turbopack) |
-| React | 19.2.4 | UI |
-| TypeScript | ^5 | Typowanie |
-| Tailwind CSS | ^4 | Style |
+**Race conditions pojawiają się w nieoczekiwanych miejscach**
+Podwójne kliknięcie przy wolnym połączeniu — dwa równoległe POST /find — oba sprawdzają dedup jednocześnie, oba widzą domenę jako nową, oba próbują zapisać. Rozwiązanie wymagało trzech warstw: disabled button, UNIQUE constraint w DB, ON CONFLICT DO NOTHING przy INSERT.
 
-### Infrastruktura
+**Status "pokazana ale bez decyzji" to realny problem**
+Użytkownik widzi firmę, otwiera link, zamyka laptopa. Firma ma status "presented" — dedup ją złapie przy kolejnym wywołaniu i nie wróci. Stracona bez śladu. Rozwiązanie: przy każdym POST /find sprawdź najpierw czy jest nierozstrzygnięta firma z ostatnich 24h i zwróć ją ponownie.
 
-| Usługa | Rola |
-|---|---|
-| Railway | Hosting backendu (Python/FastAPI) |
-| Vercel | Hosting frontendu (Next.js) |
-| Supabase | PostgreSQL (managed) |
-| SerpAPI | Google Search API |
-| Anthropic API | Claude Haiku |
-| LangSmith | Monitoring LLM (opcjonalne) |
+**Truncacja treści to decyzja produktowa, nie ograniczenie techniczne**
+Blog firmowy z artykułami może mieć 70k tokenów. Przy cenie Haiku jedno takie wywołanie kosztuje 56× więcej niż normalne i trwa 8–15 sekund zamiast 1–2. Pierwsze 2000 znaków każdej strony zawiera zawsze to co potrzebne do klasyfikacji — hero i opis usług. Artykuły zaczynają się za tym progiem.
 
 ---
 
-## Deployment produkcyjny
+## Autor
 
-### Backend na Railway
+**Konrad Pochwała**
 
-1. Utwórz nowy projekt na [railway.app](https://railway.app) i połącz z repozytorium.
-
-2. Railway automatycznie wykryje `Procfile`:
-   ```
-   web: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
-   ```
-
-3. W panelu Railway → **Variables** dodaj wszystkie zmienne:
-   ```
-   ANTHROPIC_API_KEY=...
-   SERPAPI_KEY=...
-   SUPABASE_URL=https://xxx.supabase.co
-   SUPABASE_SERVICE_ROLE_KEY=eyJ...
-   API_SECRET=losowy-tajny-klucz
-   FRONTEND_URL=https://crm-job-agent.vercel.app
-   ```
-
-4. Po deploymencie sprawdź zdrowie: `https://<twoj-projekt>.up.railway.app/`
-
-### Frontend na Vercel
-
-1. Zaimportuj repozytorium na [vercel.com](https://vercel.com).
-
-2. Ustaw **Root Directory** na `frontend`.
-
-3. W **Environment Variables** dodaj:
-   ```
-   NEXT_PUBLIC_API_URL=https://<twoj-projekt>.up.railway.app
-   NEXT_PUBLIC_API_SECRET=ten-sam-co-API_SECRET-na-Railway
-   ```
-
-4. Deploy — Vercel automatycznie buduje Next.js.
-
-### Kolejność deploymentu
-
-```
-Supabase (schema) → Railway (backend) → Vercel (frontend)
-```
-
-Najpierw baza, potem backend, na końcu frontend — bo frontend potrzebuje URL backendu.
-
----
-
-## FAQ i rozwiązywanie problemów
-
-### Agent zwraca 404 "Nie znaleziono nowych firm"
-
-Agent zużył jeden attempt (MAX_ATTEMPTS=1) i nie znalazł firmy spełniającej kryteria. Przyczyny:
-
-- Losowe zapytanie trafiło na artykuły rankingowe — kliknij ponownie
-- SerpAPI osiągnął limit miesięcznych zapytań — sprawdź dashboard SerpAPI
-- Wszystkie wyniki z danej niszy są już w bazie (`skipped`/`presented`) — przy kolejnym kliknięciu agent wylosuje inną niszę
-
-**Fix:** Kliknij "Znajdź firmę" jeszcze raz. Zapytania są losowane, następne może zwrócić inną niszę.
-
----
-
-### Backend zwraca 503 "Problem z bazą danych"
-
-```
-HTTP 503 — Problem z bazą danych. Spróbuj ponownie.
-```
-
-Supabase jest chwilowo niedostępny lub klucze są błędne.
-
-**Sprawdź:**
-1. `SUPABASE_URL` — tylko domena `https://xxx.supabase.co`, bez `/rest/v1/`
-2. `SUPABASE_SERVICE_ROLE_KEY` — klucz `service_role` z zakładki **API → Legacy** (nie `anon`)
-3. Status Supabase: [status.supabase.com](https://status.supabase.com)
-
----
-
-### Backend zwraca 503 "Wyszukiwanie trwa za długo"
-
-Discovery loop ma timeout 55 sekund. Jeśli przekroczy — Railway zabija request.
-
-**Przyczyny:**
-- SerpAPI odpowiada bardzo wolno
-- Fetch strony (httpx) zawiesił się na złym hoście
-
-**Fix:** Kliknij ponownie. Jeśli problem powtarza się — sprawdź logi w Railway (zakładka Logs).
-
----
-
-### CORS error w przeglądarce
-
-```
-Access to fetch at 'http://localhost:8000' has been blocked by CORS policy
-```
-
-Backend nie ma skonfigurowanego `FRONTEND_URL`.
-
-**Fix lokalny:** Upewnij się, że w `.env` masz:
-```
-FRONTEND_URL=http://localhost:3000
-```
-i zrestartuj backend.
-
-**Fix produkcyjny:** W Railway → Variables dodaj:
-```
-FRONTEND_URL=https://twoja-domena.vercel.app
-```
-
----
-
-### Firma pojawia się ponownie po "Pomiń"
-
-Dedup działa po znormalizowanej domenie. Firma może wracać jeśli:
-- Domena ma subdomeny (`www.firma.pl` vs `firma.pl`) — po poprawce kodu to nie powinno się zdarzać
-- Firma była w statusie `presented` starszym niż 24h — po następnym `/find` zostanie automatycznie przeniesiona do `skipped`
-
----
-
-### Klucz API jest odrzucany (401)
-
-```
-HTTP 401 — Nieprawidłowy lub brakujący klucz API.
-```
-
-Frontend wysyła inny `X-Api-Key` niż backend oczekuje.
-
-**Sprawdź:**
-- `API_SECRET` w Railway i `NEXT_PUBLIC_API_SECRET` w Vercel muszą być **identyczne**
-- Po zmianie zmiennych na Vercel wymagany jest redeploy
-
----
-
-### `SUPABASE_SERVICE_KEY` vs `SUPABASE_SERVICE_ROLE_KEY`
-
-Zmienna nazywa się **`SUPABASE_SERVICE_ROLE_KEY`** (z `_ROLE_`). Bez `_ROLE_` backend nie połączy się z bazą.
-
----
-
-### Frontend nie widzi nowych zmiennych środowiskowych
-
-Zmienne `NEXT_PUBLIC_*` są wbudowywane w bundle podczas budowania. Sama zmiana zmiennej w Vercel nie wystarczy — wymagany jest **nowy deployment** (Vercel → Redeploy).
-
----
-
-### Haiku klasyfikuje polską firmę AI jako `is_ai_company: false`
-
-Model ocenia tylko pierwsze 2000 znaków treści strony. Jeśli firma ma landing page z samymi zdjęciami i mało tekstu — snippet z Google może być za krótki do klasyfikacji.
-
-**Workaround:** Dodaj firmę ręcznie przez "Dodaj ręcznie" w CRM Dashboard.
-
----
-
-## Licencja
-
-**All Rights Reserved.**
-
-Copyright © 2026 Konrad Pochwała. Wszelkie prawa zastrzeżone.
-
-Kod źródłowy tego projektu jest prywatny. Zakazuje się kopiowania, modyfikowania, dystrybucji, sublicencjonowania lub sprzedaży całości lub części kodu bez pisemnej zgody autora.
+- GitHub: [DO UZUPEŁNIENIA]
+- LinkedIn: [DO UZUPEŁNIENIA]
