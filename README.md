@@ -101,9 +101,9 @@ SerpAPI Google Search (gl=pl, hl=pl, num=5)
   ├─ pre-filter: URL lub tytuł wygląda jak artykuł / ranking / lista?
   ├─ pre-filter: snippet jednoznacznie wyklucza firmę AI?
   │
-  ├─ snippet ≥150 znaków → użyj snippetu (bez dodatkowego fetcha)
-  └─ snippet <150 znaków → pobierz stronę (httpx + BS4, timeout 5s)
-                            fallback na snippet jeśli fetch zawiedzie
+  │
+  content = snippet ≥150 znaków ? snippet : fetch strony (httpx + BS4, timeout 5s)
+            fetch zawiedzie → fallback na snippet
   │
   ▼
 Claude Haiku 4.5 — structured output, max 2000 znaków treści
