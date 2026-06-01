@@ -33,6 +33,7 @@ out/
 npm-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+tsconfig.tsbuildinfo
 
 # ============================================================
 # IDE
